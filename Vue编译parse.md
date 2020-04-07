@@ -1008,14 +1008,3 @@ function transformNode (el: ASTElement, options: CompilerOptions) {
     staticClass: ""list""
 }
 ```
-
-## 总结
-
-Vue的`parse`过程：
-
-1. 根据正则匹配标签。
-2. 解析匹配到的标签，除文本标签外，会一直解析标签的属性，直到解析到标签`>`闭合符号结束，而文本节点会解析表达式文本。
-3. 将解析到的属性转化为转化另一种格式。
-4. 创建`AST`，扩展`AST`，并构建`AST`树。
-
- 
