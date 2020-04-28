@@ -424,3 +424,419 @@ const START = createRoute(null, {
 ```
 
 执行`super`就是执行了`History`的`constructor`，初始化`this.current`是`START`，它的作用是第一次`transitrionTo`时会用到，至此`VueRouter`的安装和初始化结束。
+
+### match
+
+```javascript
+function match (
+    raw: RawLocation,
+    currentRoute?: Route,
+    redirectedFrom?: Location
+  ): Route {
+    const location = normalizeLocation(raw, currentRoute, false, router)
+    const { name } = location
+
+    
+    if (name) {
+      const record = nameMap[name]
+      if (process.env.NODE_ENV !== 'production') {
+        warn(record, `Route with name '${name}' does not exist`)
+      }
+      if (!record) return _createRoute(null, location)
+          const paramNames = record.regex.keys
+        .filter(key => !key.optional)
+        .map(key => key.name)
+
+      if (typeof location.params !== 'object') {
+        location.params = {}
+      }
+
+      if (currentRoute && typeof currentRoute.params === 'object') {
+        for (const key in currentRoute.params) {
+          if (!(key in location.params) && paramNames.indexOf(key) > -1) {
+            location.params[key] = currentRoute.params[key]
+          }
+        }
+      }
+
+      location.path = fillParams(record.path, location.params, `named route "${name}"`)
+      return _createRoute(record, location, redirectedFrom)
+    } else if (location.path) {
+      location.params = {}
+      for (let i = 0; i < pathList.length; i++) {
+        const path = pathList[i]
+        const record = pathMap[path]
+        if (matchRoute(record.regex, location.path, location.params)) {
+          return _createRoute(record, location, redirectedFrom)
+        }
+      }
+    }
+    // no match
+    return _createRoute(null, location)
+}
+```
+
+`match`是`Matcher`的一个方法，它的作用是根据传入的`raw`也就是目标路径的`Location`和当前路径的`Route`计算出新的`Route`。
+
++ Location
+
+```javascript
+declare type Location = {
+  _normalized?: boolean;
+  name?: string;
+  path?: string;
+  hash?: string;
+  query?: Dictionary<string>;
+  params?: Dictionary<string>;
+  append?: boolean;
+  replace?: boolean;
+}
+
+declare type RawLocation = string | Location
+```
+
+`Location`是对`path`的结构化描述。
+
++ Route
+
+```javasc
+declare type Route = {
+  path: string;
+  name: ?string;
+  hash: string;
+  query: Dictionary<string>;
+  params: Dictionary<string>;
+  fullPath: string;
+  matched: Array<RouteRecord>;
+  redirectedFrom?: string;
+  meta?: any;
+}
+```
+
+`Route`也是对`path`的结构化描述，`matched`是`Route`一条线路上的所有的`RouteRecord`，举个例子：
+
+```javascript
+[
+    {
+        path: '/foo'
+        component: Foo,
+        children: [
+        	{
+        		path: 'bar',
+        		component: Bar,
+        		children: [
+        			{
+        				path: 'baz',
+        				component: Baz
+    				}
+        		]
+    		}
+        ]
+    }
+]
+```
+
+路由`/foo/bar/baz`的`matched`就是`[baz的RouteRecord, bar的RouteRecord，foo的RouteRecord]`。
+
+首先会执行`normalizeLocation`计算出新的`Location`，源码：
+
+```javascript
+export function normalizeLocation (
+  raw: RawLocation,
+  current: ?Route,
+  append: ?boolean,
+  router: ?VueRouter
+): Location {
+  let next: Location = typeof raw === 'string' ? { path: raw } : raw
+  // named target
+  if (next._normalized) {
+    return next
+  } else if (next.name) {
+    next = extend({}, raw)
+    const params = next.params
+    if (params && typeof params === 'object') {
+      next.params = extend({}, params)
+    }
+    return next
+  }
+
+  // relative params
+  if (!next.path && next.params && current) {
+    next = extend({}, next)
+    next._normalized = true
+    const params: any = extend(extend({}, current.params), next.params)
+    if (current.name) {
+      next.name = current.name
+      next.params = params
+    } else if (current.matched.length) {
+      const rawPath = current.matched[current.matched.length - 1].path
+      next.path = fillParams(rawPath, params, `path ${current.path}`)
+    } else if (process.env.NODE_ENV !== 'production') {
+      warn(false, `relative params navigation requires a current route.`)
+    }
+    return next
+  }
+
+  const parsedPath = parsePath(next.path || '')
+  const basePath = (current && current.path) || '/'
+  const path = parsedPath.path
+    ? resolvePath(parsedPath.path, basePath, append || next.append)
+    : basePath
+
+  const query = resolveQuery(
+    parsedPath.query,
+    next.query,
+    router && router.options.parseQuery
+  )
+
+  let hash = next.hash || parsedPath.hash
+  if (hash && hash.charAt(0) !== '#') {
+    hash = `#${hash}`
+  }
+
+  return {
+    _normalized: true,
+    path,
+    query,
+    hash
+  }
+}
+```
+
+首先根据传入的`raw`初始化`next`，如果`next._normalized`为`true`说明已经是计算过的`Location`，直接返回。如果`next.name`有值，那么会获取`next.params`，有值的情况，进行一次拷贝，然后重新赋值给`next.params`并返回。如果上面2个逻辑都没有命中，那么会计算新的`Location`，这个新的`Location`分2种情况：
+
++ 有`path`
+
+有`path`的情况下，首先会执行`parsePath(next.path)`，源码：
+```javascript
+export function parsePath (path: string): {
+  path: string;
+  query: string;
+  hash: string;
+} {
+  let hash = ''
+  let query = ''
+
+  const hashIndex = path.indexOf('#')
+  if (hashIndex >= 0) {
+    hash = path.slice(hashIndex)
+    path = path.slice(0, hashIndex)
+  }
+
+  const queryIndex = path.indexOf('?')
+  if (queryIndex >= 0) {
+    query = path.slice(queryIndex + 1)
+    path = path.slice(0, queryIndex)
+  }
+
+  return {
+    path,
+    query,
+    hash
+  }
+}
+```
+
+该函数会解析出目标路径的`query`和`hash`以及`path`。然后获取当前`Route`的`path`，根据这个`path`和解析出的`parsePath`执行`resolvePath`计算出新的`path`，源码：
+
+```javascript
+export function resolvePath (
+  relative: string,
+  base: string,
+  append?: boolean
+): string {
+  const firstChar = relative.charAt(0)
+  if (firstChar === '/') {
+    return relative
+  }
+
+  if (firstChar === '?' || firstChar === '#') {
+    return base + relative
+  }
+
+  const stack = base.split('/')
+
+  // remove trailing segment if:
+  // - not appending
+  // - appending to trailing slash (last segment is empty)
+  if (!append || !stack[stack.length - 1]) {
+    stack.pop()
+  }
+
+  // resolve relative path
+  const segments = relative.replace(/^\//, '').split('/')
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i]
+    if (segment === '..') {
+      stack.pop()
+    } else if (segment !== '.') {
+      stack.push(segment)
+    }
+  }
+
+  // ensure leading slash
+  if (stack[0] !== '') {
+    stack.unshift('')
+  }
+
+  return stack.join('/')
+}
+```
+
+这个解析的目的是，可能用户手写的路径会有相对路径`../`，也可能是只有参数`?foo=bar`，或者其他情况，这时候需要解析出真正的目标路径。然后又会根据`parsePath.query`和`next.query`执行`resolveQuery`解析出`query`，源码：
+
+```javascript
+export function resolveQuery (
+  query: ?string,
+  extraQuery: Dictionary<string> = {},
+  _parseQuery: ?Function
+): Dictionary<string> {
+  const parse = _parseQuery || parseQuery
+  let parsedQuery
+  try {
+    parsedQuery = parse(query || '')
+  } catch (e) {
+    process.env.NODE_ENV !== 'production' && warn(false, e.message)
+    parsedQuery = {}
+  }
+  for (const key in extraQuery) {
+    parsedQuery[key] = extraQuery[key]
+  }
+  return parsedQuery
+}
+```
+
+该函数的主要目的就是整合目标路径上的`query`，目标路径可以是：
+
+1. 字符换`foo/?foo=bar`
+
+2. 对象`{ path: 'foo', query: { foo: 'bar' } }`
+
+但是，最终它们的`query`都会转成`{ foo: 'bar' }`。
+
++ 没`path`有`params`
+
+```javascript
+ // relative params
+if (!next.path && next.params && current) {
+    next = extend({}, next)
+    next._normalized = true
+    const params: any = extend(extend({}, current.params), next.params)
+    if (current.name) {
+      next.name = current.name
+      next.params = params
+    } else if (current.matched.length) {
+      const rawPath = current.matched[current.matched.length - 1].path
+      next.path = fillParams(rawPath, params, `path ${current.path}`)
+    } else if (process.env.NODE_ENV !== 'production') {
+      warn(false, `relative params navigation requires a current route.`)
+    }
+    return next
+}
+```
+
+拷贝`next`，拷贝`params`，如果当前路径中有`name`，赋值给`next`同时添加`params`，直接`return`；如果没有`name`，获取当前路径中的`matched`中最顶层的`RouteRecord`的`path`，根据这个`path`和`pramas`通过执行`fillParams`计算出新的`path`，再`return`。
+
+计算出新的`Location`后，会获取它的`name`，如果有，则说明此时的`Location`没有`path`，从`nameMap`中找对到对应的`RouteRecord`，获取它的所有`params`的`key`，遍历`currentRoute`的`params`，将它们的交集的部分，添加到新的`Location`中，通过`record.path`和`location.params`计算出`location.path`，最后通过`_createRoute(record, location, redirectedFrom)`计算出新的`Route`。
+
+如有`path`，会去遍历`pathList`，根据`path`找到对应的`record`，根据`record.regex`和`location.path`匹配，如果匹配成功，就执行`_createRoute(record, location, redirectedFrom)`计算出新的`Route`，否则会执行`_createRoute(null, location)`计算空的`Route`。
+
+`_createRoute`源码：
+
+```javascript
+function _createRoute (
+    record: ?RouteRecord,
+    location: Location,
+    redirectedFrom?: Location
+  ): Route {
+    if (record && record.redirect) {
+      return redirect(record, redirectedFrom || location)
+    }
+    if (record && record.matchAs) {
+      return alias(record, location, record.matchAs)
+    }
+    return createRoute(record, location, redirectedFrom, router)
+}
+```
+
+不考虑`redirect`和`matchAs`的情况，直接执行`createRoute`，源码：
+
+```javascript
+export function createRoute (
+  record: ?RouteRecord,
+  location: Location,
+  redirectedFrom?: ?Location,
+  router?: VueRouter
+): Route {
+  const stringifyQuery = router && router.options.stringifyQuery
+
+  let query: any = location.query || {}
+  try {
+    query = clone(query)
+  } catch (e) {}
+
+  const route: Route = {
+    name: location.name || (record && record.name),
+    meta: (record && record.meta) || {},
+    path: location.path || '/',
+    hash: location.hash || '',
+    query,
+    params: location.params || {},
+    fullPath: getFullPath(location, stringifyQuery),
+    matched: record ? formatMatch(record) : []
+  }
+  if (redirectedFrom) {
+    route.redirectedFrom = getFullPath(redirectedFrom, stringifyQuery)
+  }
+  return Object.freeze(route)
+}
+```
+
+该函数是真正创建`Route`的函数，介绍`Route`的时候说明了`matched`是存储当前`Route`这一条线路上所有的`RouteRecord`，它是通过`formatMatch`计算得出，源码：
+
+```javasc
+function formatMatch (record: ?RouteRecord): Array<RouteRecord> {
+  const res = []
+  while (record) {
+    res.unshift(record)
+    record = record.parent
+  }
+  return res
+}
+```
+
+还是使用之前的那个例子：
+
+```javascript
+[
+    {
+        path: '/foo'
+        component: Foo,
+        children: [
+        	{
+        		path: 'bar',
+        		component: Bar,
+        		children: [
+        			{
+        				path: 'baz',
+        				component: Baz
+    				}
+        		]
+    		}
+        ]
+    }
+]
+```
+
+计算`baz`的`Route`的`matched`时，先将他自己的`RouteRecord` `push`到`matched`中，接着向上遍历它的父`RouteRecord`，也就是`bar`的`RouteRecord`，最终遍历到顶层`foo`的`RouteRecord`，所以`matched`最末位永远是每条线路的最外层`RouteRecord`。
+
+### addRoutes
+
+```javascript
+function addRoutes (routes) {
+  createRouteMap(routes, pathList, pathMap, nameMap)
+}
+```
+
+这个方法是暴露给用户的接口，动态添加路由的方法，向已经存在的`pathList`和`pathMap`以及`nameMap`中添加新的`path`以及`RouteRecord`。
+
