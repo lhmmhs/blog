@@ -1,8 +1,77 @@
 Vue-Router版本3.1.6
 
-### url更新
+### 更新url
 
-点击`<router-link>`会执行`router.push`方法，源码：
+当用户点击`<router-link>`渲染出的`<a>`标签时，会更新`url`，这是因为`<router-link>`组件默认绑定了`click`事件，而事件函数内部会执行原生`history`的`pushState`或`replaceState`方法。
+
+`<router-link>`组件源码：
+
+```javascript
+export default {
+  name: 'RouterLink',
+  props: {
+    to: {
+      type: toTypes,
+      required: true
+    },
+    tag: {
+      type: String,
+      default: 'a'
+    },
+    exact: Boolean,
+    append: Boolean,
+    replace: Boolean,
+    activeClass: String,
+    exactActiveClass: String,
+    ariaCurrentValue: {
+      type: String,
+      default: 'page'
+    },
+    event: {
+      type: eventTypes,
+      default: 'click'
+    }
+  },
+  render (h: Function) {
+    const router = this.$router
+    const current = this.$route
+    const { location, route, href } = router.resolve(
+      this.to,
+      current,
+      this.append
+    )
+
+    // ... 
+
+    // 事件函数
+    const handler = e => {
+      if (guardEvent(e)) {
+        if (this.replace) {
+          router.replace(location, noop)
+        } else {
+          router.push(location, noop)
+        }
+      }
+    }
+    
+    // 默认事件 click
+    const on = { click: guardEvent }
+    if (Array.isArray(this.event)) {
+      this.event.forEach(e => {
+        on[e] = handler
+      })
+    } else {
+      on[this.event] = handler
+    }
+
+    // ...
+
+    return h(this.tag, data, this.$slots.default)
+  }
+}
+```
+
+可以看出，事件函数内部执行的`router.push`或`router.replace`方法，源码：
 
 ```javascript
 push (location: RawLocation, onComplete?: Function, onAbort?: Function) {
@@ -15,6 +84,17 @@ push (location: RawLocation, onComplete?: Function, onAbort?: Function) {
     this.history.push(location, onComplete, onAbort)
   }
 }
+
+replace (location: RawLocation, onComplete?: Function, onAbort?: Function) {
+  // $flow-disable-line
+  if (!onComplete && !onAbort && typeof Promise !== 'undefined') {
+    return new Promise((resolve, reject) => {
+      this.history.replace(location, resolve, reject)
+    })
+  } else {
+    this.history.replace(location, onComplete, onAbort)
+  }
+}
 ```
 
 `router.push`又会执行`history.push`，`history`的`push`方法不是继承而来，所以不同的`history`实现不同，这里分析`hashHistory`的`push`方法：
@@ -24,9 +104,21 @@ push (location: RawLocation, onComplete?: Function, onAbort?: Function) {
   const { current: fromRoute } = this
   this.transitionTo(
     location,
-    // 回调
     route => {
       pushHash(route.fullPath)
+      handleScroll(this.router, route, fromRoute, false)
+      onComplete && onComplete(route)
+    },
+    onAbort
+  )
+}
+
+replace (location: RawLocation, onComplete?: Function, onAbort?: Function) {
+  const { current: fromRoute } = this
+  this.transitionTo(
+    location,
+    route => {
+      replaceHash(route.fullPath)
       handleScroll(this.router, route, fromRoute, false)
       onComplete && onComplete(route)
     },
