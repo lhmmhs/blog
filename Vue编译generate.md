@@ -343,7 +343,7 @@ export function genChildren (
 }
 ```
 
-获取`children`中的第一个元素，会进入`if (children.length === 1 &&el.for &&el.tag !== 'template' &&el.tag !== 'slot')`分支执行`state.maybeComponent`，这个函数先判断元素是不是组件，不是再去判断是不是保留的标签，如果是返回`false`，不是返回`true`，此时的`el`是`li`所以返回`false`，`normalizationType`为`,0`，返回的字符串中有一次执行了`genElement`。
+获取`children`中的第一个元素，会进入`if (children.length === 1 && el.for && el.tag !== 'template' && el.tag !== 'slot')`分支执行`state.maybeComponent`，这个函数先判断元素是不是组件，不是再去判断是不是保留的标签，如果是返回`false`，不是返回`true`，此时的`el`是`li`所以返回`false`，`normalizationType`为`,0`，返回的字符串中又一次执行了`genElement`。
 
 ***第三次进入`genElement`***，此时的`el`为`li`，会进入`genFor`，源码在`src/compiler/codegen/index.js`：
 
