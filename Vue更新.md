@@ -180,7 +180,7 @@ function patchVnode (
 
 ### 组件`vnode`
 
-组件`vnode`的更新，本质上是组件内的真实`DOM`的更新。
+组件`vnode`的更新，本质上是组件内的普通元素`vnode`的更新。
 
 ```javascript
 let i
