@@ -1,32 +1,29 @@
 版本是v2.6.11
 
+引用官网的一句话：
+
+Vue 最独特的特性之一，是其非侵入性的响应式系统。数据模型仅仅是普通的 JavaScript 对象。而当你修改它们时，视图会进行更新。
+
+其工作原理是：
+
+1. 当你把一个普通的 JavaScript 对象传入 Vue 实例作为 `data` 选项，Vue 将遍历此对象所有的属性，并使用 `Object.defineProperty` 把这些属性全部转为响应式`getter/setter`的。
+2. 在组件渲染的过程中，会访问这些属性，触发这些属性的`getter`，进行依赖收集。
+3. 当这些属性被修改时，会触发它们的`setter`，进行派发更新。
+
 ## 数据转化为响应式
 
-`new Vue`的过程，会执行`this._init`：
+实例化`Vue`或实例化组件的过程中，都会执行`initState`这个方法，它是在调用`_init`方法是被执行的，
 
 ```javascript
 Vue.prototype._init = function (options?: Object) {
-  const vm: Component = this
   // ...
     
-  // expose real self
-  vm._self = vm
-  initLifecycle(vm)
-  initEvents(vm)
-  initRender(vm)
-  callHook(vm, 'beforeCreate')
-  initInjections(vm) // resolve injections before data/props
   initState(vm)
-  initProvide(vm) // resolve provide after data/props
-  callHook(vm, 'created')
 
   // ...
 }
-```
 
-执行`initState`会初始化`methods`，`data`，`computed`，`watch`以及`props`，源码：
 
-```javascript
 export function initState (vm: Component) {
   vm._watchers = []
   const opts = vm.$options
@@ -44,7 +41,7 @@ export function initState (vm: Component) {
 }
 ```
 
-`initData`源码：
+`initState`的实现，初始化一系列配置选项`props`，`methods`，`data`，`computed`，`watch`，`data`的的初始化是在`initData`中，其源码：
 
 ```javascript
 function initData (vm: Component) {
@@ -52,73 +49,15 @@ function initData (vm: Component) {
   data = vm._data = typeof data === 'function'
     ? getData(data, vm)
     : data || {}
-  if (!isPlainObject(data)) {
-    data = {}
-    process.env.NODE_ENV !== 'production' && warn(
-      'data functions should return an object:\n' +
-      'https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function',
-      vm
-    )
-  }
-  // proxy data on instance
-  const keys = Object.keys(data)
-  const props = vm.$options.props
-  const methods = vm.$options.methods
-  let i = keys.length
-  while (i--) {
-    const key = keys[i]
-    if (process.env.NODE_ENV !== 'production') {
-      if (methods && hasOwn(methods, key)) {
-        warn(
-          `Method "${key}" has already been defined as a data property.`,
-          vm
-        )
-      }
-    }
-    if (props && hasOwn(props, key)) {
-      process.env.NODE_ENV !== 'production' && warn(
-        `The data property "${key}" is already declared as a prop. ` +
-        `Use prop default value instead.`,
-        vm
-      )
-    } else if (!isReserved(key)) {
-      proxy(vm, `_data`, key)
-    }
-  }
+  
+  // ...
+    
   // observe data
   observe(data, true /* asRootData */)
 }
 ```
 
-如上，主要做了两件事：
-
-1. `proxy(vm, `_data`, key)`，实例`vm`代理数据
-2. `observe(data, true /* asRootData */)`，`data`转化为响应式
-
-`proxy`代理：
-
-```javascript
-const sharedPropertyDefinition = {
-  enumerable: true,
-  configurable: true,
-  get: noop,
-  set: noop
-}
-
-export function proxy (target: Object, sourceKey: string, key: string) {
-  sharedPropertyDefinition.get = function proxyGetter () {
-    return this[sourceKey][key]
-  }
-  sharedPropertyDefinition.set = function proxySetter (val) {
-    this[sourceKey][key] = val
-  }
-  Object.defineProperty(target, key, sharedPropertyDefinition)
-}
-```
-
-如上，组件中可以直接通过实例`this`拿到`data`上的数据，原因就是这里做了一层代理，访问`this.name`就相当于访问了`this._data.name`。
-
-`observe`：
+判断`data`是否为函数，是函数怎么获取函数的返回值，不是则取自身，然后通过执行`observe`对`data`进行处理。
 
 ```javascript
 export function observe (value: any, asRootData: ?boolean): Observer | void {
@@ -144,7 +83,9 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
 }
 ```
 
-执行`new Observer`：
+该方法先判断`value`上是否有`__ob__`这个属性，如果没有，则实例化`Observer`并挂载到`value.__ob__`上，如果是根`data`，会进行`Observer.vmCount++`。
+
+`Observer`类：
 
 ```javascript
 export class Observer {
@@ -190,11 +131,7 @@ export class Observer {
     }
   }
 }
-```
 
-`Observer`实例化，主要是将自身实例通过`def`添加到数据对象上的`__ob__`属性上。
-
-```javascript
 export function def (obj: Object, key: string, val: any, enumerable?: boolean) {
   Object.defineProperty(obj, key, {
     value: val,
@@ -205,13 +142,22 @@ export function def (obj: Object, key: string, val: any, enumerable?: boolean) {
 }
 ```
 
-然后对数据对象进行判断，如果是数组，就通过`protoAugment`或`copyAugment`修改这个数据对象原型上的方法：
+`Observer`类，主要是将自身实例通过`def`挂载到`value.__ob__`上，并实例化`Dep`挂载到自身上的`dep`属性上，最后将传入的数据进行响应式处理。
+
+数据进行响应式处理分为两种情况：
+
+1. 数据是数组类型
+2. 数据是纯对象类型
+
+**数据是数组类型**，通过`protoAugment`或`copyAugment`修改数组的方法：
 
 ```javascript
+// 直接修改数组原型方法
 function protoAugment (target, src: Object) {
   target.__proto__ = src
 }
 
+// 在数组实例上添加修改后的原生方法，屏蔽原型方法
 function copyAugment (target: Object, src: Object, keys: Array<string>) {
   for (let i = 0, l = keys.length; i < l; i++) {
     const key = keys[i]
@@ -219,7 +165,7 @@ function copyAugment (target: Object, src: Object, keys: Array<string>) {
   }
 }
 ```
-这些修改后的方法定义在：
+这些修改后的方法：
 ```javascript
 const arrayProto = Array.prototype
 export const arrayMethods = Object.create(arrayProto)
@@ -262,11 +208,9 @@ methodsToPatch.forEach(function (method) {
 })
 ```
 
-如上，在原有的方法上进行了一层包装，包装后的函数首先会执行原生方法，然后判断`push`，`unshift`以及`splice`情况下，对新增元素进行响应式处理，在调用`ob.dep.notify`进行派发更新，这就是当数组使用这些被包装过的方法，可以触发视图更新的原因。
+在原生方法的基础上，进行了一层包装，包装后的函数首先会调用原生方法，然后判断`push`，`unshift`以及`splice`情况下，对新增元素进行响应式处理，在调用`ob.dep.notify`进行派发更新，这就是当数组使用这些被包装过的方法，可以触发视图更新的原因。
 
-回到`Observer`构造函数，最后会执行`this.observeArray`依次将数组的每个元素进行响应式处理。
-
-数据对象是纯对象，会通过`this.walk`，进而执行`defineReactive`进行响应式处理：
+**数据对象是纯对象**，通过`walk`，去执行`defineReactive`：
 
 ```javascript
 export function defineReactive (
@@ -294,44 +238,15 @@ export function defineReactive (
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
-    get: function reactiveGetter () {
-      const value = getter ? getter.call(obj) : val
-      if (Dep.target) {
-        dep.depend()
-        if (childOb) {
-          childOb.dep.depend()
-          if (Array.isArray(value)) {
-            dependArray(value)
-          }
-        }
-      }
-      return value
-    },
-    set: function reactiveSetter (newVal) {
-      const value = getter ? getter.call(obj) : val
-      /* eslint-disable no-self-compare */
-      if (newVal === value || (newVal !== newVal && value !== value)) {
-        return
-      }
-      /* eslint-enable no-self-compare */
-      if (process.env.NODE_ENV !== 'production' && customSetter) {
-        customSetter()
-      }
-      // #7981: for accessor properties without setter
-      if (getter && !setter) return
-      if (setter) {
-        setter.call(obj, newVal)
-      } else {
-        val = newVal
-      }
-      childOb = !shallow && observe(newVal)
-      dep.notify()
-    }
+    get: function reactiveGetter () {...},
+    set: function reactiveSetter (newVal) {...}
   })
 }
 ```
 
-`defineReactive`是真正将数据转化为响应式的函数，首先实例化`Dep`，然后获取数据的属性描述符，通过它获取`get`和`set`，对象类型的数据会递归调用`observe`进行响应式处理，最后给数据添加`getter`和`setter`。
+`defineReactive`是真正将属性转化为响应式的函数，首先它会去实例化`Dep`，`dep`是每一个属性所对应的，然后获取属性预先设置过的`getter/setter`，如果存在的话，那么它会在属性新设置的`getter/setter`中进行调用，如果属性是对象类型，那么就递归的将对象类型下面的属性进行响应式处理，最后设置属性的`getter/setter`。
+
+然后获取数据的属性描述符，通过它获取`get`和`set`，对象类型的数据会递归调用`observe`进行响应式处理，最后给数据添加`getter`和`setter`。
 
 ### Dep
 
@@ -374,25 +289,9 @@ export default class Dep {
     }
   }
 }
-
-// The current target watcher being evaluated.
-// This is globally unique because only one watcher
-// can be evaluated at a time.
-Dep.target = null
-const targetStack = []
-
-export function pushTarget (target: ?Watcher) {
-  targetStack.push(target)
-  Dep.target = target
-}
-
-export function popTarget () {
-  targetStack.pop()
-  Dep.target = targetStack[targetStack.length - 1]
-}
 ```
 
-`Dep`是个类，它的作用就是充当被订阅的角色。
+`Dep`是个类，每一个响应式属性都有与其对应的`Dep`实例，其作用是收集`watcher`，而收集`watcher`的目的是，当响应式属性发生变化的时候，通知它们去更新。
 
 ```javascript
 export default class Watcher {
@@ -473,13 +372,11 @@ export default class Watcher {
 
 ```
 
-`Watcher`是个类，它充当了订阅的角色。
+`Watcher`是个类，它充当了观察者的角色。
 
 ## 依赖收集
 
-依赖收集就是，对订阅数据变化的`watcher`的收集，而依赖收集的目的就是为了，当数据发生变化的时候去通知订阅了它变化的`watcher`更新。
-
-挂载过程中，会执行`mountComponent`：
+依赖收集的目的就是为了数据变化时，去通知`watcher`进行更新，现在数据已经被处理为响应式的了，那么它旧可以进行依赖收集了，而依赖收集的时机时在组件`render`的过程中，而`render`时在组件的挂在过程中，那么我们从挂在过程中的`mountComponent`说起：
 
 ```javascript
 export function mountComponent (
@@ -504,7 +401,7 @@ export function mountComponent (
 }
 ```
 
-`mountComponent`会执行`new Watcher`：
+`mountComponent`会实例化`Watcher`，而此时的`watcher`是渲染`watcher`：
 
 ```javascript
 constructor (
@@ -553,9 +450,6 @@ get () {
 执行`pushTarget`：
 
 ```javascript
-// The current target watcher being evaluated.
-// This is globally unique because only one watcher
-// can be evaluated at a time.
 Dep.target = null
 
 export function pushTarget (target: ?Watcher) {
@@ -564,9 +458,9 @@ export function pushTarget (target: ?Watcher) {
 }
 ```
 
-通过`targetStack`将`watcher`保存起来，然后设置`Dep.target`为当前`watcher`，称为渲染`watcher`，数据在依赖收集的时候会用到。
+通过`targetStack`将之前的`watcher`保存起来，然后设置`Dep.target`为当前`watcher`，数据在依赖收集的时候会用到`Dep.target`。
 
-然后会执行`this.getter`，`this.getter`是`updateComponent`，是执行`_render`和`_update`的入口，执行`_render`的过程中，会访问到数据，进而触发数据的`getter`：
+执行`this.getter`，`this.getter`是`updateComponent`，是执行`_render`和`_update`的入口，执行`_render`的过程中，会访问到数据，进而触发数据的`getter`：
 
 ```javascript
 get: function reactiveGetter () {
@@ -584,7 +478,7 @@ get: function reactiveGetter () {
 },
 ```
 
-`getter`判断`Dep.target`，只有`Dep.target`-> `watcher`存在的情况下，才会执行`dep.depend`：
+`getter`判断`Dep.target`，是当前的`watcher`，执行`dep.depend`进行依赖收集。
 
 ```javascript
 // Dep
@@ -663,7 +557,7 @@ cleanupDeps () {
 </template>
 ```
 
-`flag`为`true`时，`name1`订阅了渲染`watcher`，`flag`为`false`时，`name2`订阅了渲染`watcher`，此时`name1`并没有渲染，那么渲染`watcher`就会从`name1`中被移除。如果没有移除，修改了`name1`，会通知渲染`watcher`去更新，但是最后是不会重新渲染`name1`的，显然这里会造成浪费。
+`flag`为`true`时，组件的渲染`watcher`订阅了`name1`，`flag`为`false`时，组件的渲染`watcher`订阅了`name2`，此时`name1`并没有渲染，那么渲染`watcher`就会从`name1`中被移除。如果没有移除，修改了`name1`，会通知渲染`watcher`去更新，但是最后是不会重新渲染`name1`的，显然这里会造成浪费。
 
 ## 派发更新
 
