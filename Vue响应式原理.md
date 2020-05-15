@@ -376,7 +376,7 @@ export default class Watcher {
 
 ## 依赖收集
 
-依赖收集的目的就是为了数据变化时，去通知`watcher`进行更新，现在数据已经被处理为响应式的了，那么它旧可以进行依赖收集了，而依赖收集的时机时在组件`render`的过程中，而`render`时在组件的挂在过程中，那么我们从挂在过程中的`mountComponent`说起：
+依赖收集的目的就是为了数据变化时，去通知`watcher`进行更新，现在数据已经被处理为响应式的了，那么可以进行依赖收集了，依赖收集的时机是在组件`render`的过程中，`render`是在组件的挂在过程中，挂载的入口是`mountComponent`：
 
 ```javascript
 export function mountComponent (
