@@ -7,7 +7,7 @@ Vue 最独特的特性之一，是其非侵入性的响应式系统。数据模�
 其工作原理是：
 
 1. 当你把一个普通的 JavaScript 对象传入 Vue 实例作为 `data` 选项，Vue 将遍历此对象所有的属性，并使用 `Object.defineProperty` 把这些属性全部转为响应式`getter/setter`的。
-2. 在组件渲染的过程中，会访问这些属性，触发这些属性的`getter`，进行依赖收集。
+2. 在组件渲染的过程中，会访问这些数据，触发这些属性的`getter`，进行依赖收集。
 3. 当这些属性被修改时，会触发它们的`setter`，进行派发更新。
 
 ## 数据转化为响应式
@@ -55,9 +55,22 @@ function initData (vm: Component) {
   // observe data
   observe(data, true /* asRootData */)
 }
+
+export function getData(data: Function, vm: Component): any {
+  // #7573 disable dep collection when invoking data getters
+  pushTarget()
+  try {
+    return data.call(vm, vm)
+  } catch (e) {
+    handleError(e, vm, `data()`)
+    return {}
+  } finally {
+    popTarget()
+  }
+}
 ```
 
-判断`data`是否为函数，是函数怎么获取函数的返回值，不是则取自身，然后通过执行`observe`对`data`进行处理。
+判断`data`是否为函数，是，取它返回值，不是，则取自身，通过执行`observe`对`data`进行处理。
 
 ```javascript
 export function observe (value: any, asRootData: ?boolean): Observer | void {
@@ -83,7 +96,7 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
 }
 ```
 
-该方法先判断`value`上是否有`__ob__`这个属性，如果没有，则实例化`Observer`并挂载到`value.__ob__`上，如果是根`data`，会进行`Observer.vmCount++`。
+`observe`先判断`value`上是否有`__ob__`这个属性，如果没有，则实例化`Observer`并挂载到`value.__ob__`上，如果是根`data`，会进行`Observer.vmCount++`。
 
 `Observer`类：
 
@@ -244,9 +257,7 @@ export function defineReactive (
 }
 ```
 
-`defineReactive`是真正将属性转化为响应式的函数，首先它会去实例化`Dep`，`dep`是每一个属性所对应的，然后获取属性预先设置过的`getter/setter`，如果存在的话，那么它会在属性新设置的`getter/setter`中进行调用，如果属性是对象类型，那么就递归的将对象类型下面的属性进行响应式处理，最后设置属性的`getter/setter`。
-
-然后获取数据的属性描述符，通过它获取`get`和`set`，对象类型的数据会递归调用`observe`进行响应式处理，最后给数据添加`getter`和`setter`。
+`defineReactive`是真正将数据转化为响应式的函数，首先它会去实例化`Dep`，`dep`是每个属性所对应的，然后获取属性预先设置过的`getter/setter`，如果存在的话，那么它会在属性新设置的`getter/setter`中进行调用，如果属性是对象或数组类型，那么就递归的将它们下面的属性进行响应式处理，最后设置属性的`getter/setter`。
 
 ### Dep
 
@@ -291,7 +302,7 @@ export default class Dep {
 }
 ```
 
-`Dep`是个类，每一个响应式属性都有与其对应的`Dep`实例，其作用是收集`watcher`，而收集`watcher`的目的是，当响应式属性发生变化的时候，通知它们去更新。
+`Dep`是个类，每个数据都有与其对应的`Dep`实例，数据是被观察的对象，`Dep`实例的作用就是管理**被观察的对象**和**观察者**之间的关系。
 
 ```javascript
 export default class Watcher {
@@ -372,115 +383,47 @@ export default class Watcher {
 
 ```
 
-`Watcher`是个类，它充当了观察者的角色。
+`Watcher`是个类，它就是上面所说的**观察者**。
 
 ## 依赖收集
 
-依赖收集的目的就是为了数据变化时，去通知`watcher`进行更新，现在数据已经被处理为响应式的了，那么可以进行依赖收集了，依赖收集的时机是在组件`render`的过程中，`render`是在组件的挂在过程中，挂载的入口是`mountComponent`：
+数据被访问时，会触发它的`getter`：
 
 ```javascript
-export function mountComponent (
-  vm: Component,
-  el: ?Element,
-  hydrating?: boolean
-): Component {
-  // ...
-
-  new Watcher(vm, updateComponent, noop, {
-    before () {
-      if (vm._isMounted && !vm._isDestroyed) {
-        callHook(vm, 'beforeUpdate')
-      }
-    }
-  }, true /* isRenderWatcher */)
-    
-  // ...
-    
-  return vm
-    
-}
-```
-
-`mountComponent`会实例化`Watcher`，而此时的`watcher`是渲染`watcher`：
-
-```javascript
-constructor (
-  vm: Component,
-  expOrFn: string | Function,
-  cb: Function,
-  options?: ?Object,
-  isRenderWatcher?: boolean
+export function defineReactive (
+  obj: Object,
+  key: string,
+  val: any,
+  customSetter?: ?Function,
+  shallow?: boolean
 ) {
+
+  const dep = new Dep()
+
   //...
-    
-   if (typeof expOrFn === 'function') {
-    this.getter = expOrFn
-  } else {
-    // ...
-  }
-    
-  // ...
-    
-  this.value = this.lazy
-    ? undefined
-    : this.get()
-}
-```
-
-这个过程会执行`watcher`的`get`：
-
-```javascript
-get () {
-  pushTarget(this)
-  let value
-  const vm = this.vm
-  try {
-    value = this.getter.call(vm, vm)
-  } catch (e) {
-    // ...
-  } finally {
-    // ...
-    popTarget()
-    this.cleanupDeps()
-  }
-  return value
-}
-```
-
-执行`pushTarget`：
-
-```javascript
-Dep.target = null
-
-export function pushTarget (target: ?Watcher) {
-  targetStack.push(target)
-  Dep.target = target
-}
-```
-
-通过`targetStack`将之前的`watcher`保存起来，然后设置`Dep.target`为当前`watcher`，数据在依赖收集的时候会用到`Dep.target`。
-
-执行`this.getter`，`this.getter`是`updateComponent`，是执行`_render`和`_update`的入口，执行`_render`的过程中，会访问到数据，进而触发数据的`getter`：
-
-```javascript
-get: function reactiveGetter () {
-  const value = getter ? getter.call(obj) : val
-  if (Dep.target) {
-    dep.depend()
-    if (childOb) {
-      childOb.dep.depend()
-      if (Array.isArray(value)) {
-        dependArray(value)
+  
+  // 响应式对象的__ob__
+  let childOb = !shallow && observe(val)
+  Object.defineProperty(obj, key, {
+    enumerable: true,
+    configurable: true,
+    get: function reactiveGetter () {
+      const value = getter ? getter.call(obj) : val
+      if (Dep.target) {
+        dep.depend()
+        if (childOb) {
+          childOb.dep.depend()
+          if (Array.isArray(value)) {
+            dependArray(value)
+          }
+        }
       }
-    }
-  }
-  return value
-},
-```
-
-`getter`判断`Dep.target`，是当前的`watcher`，执行`dep.depend`进行依赖收集。
-
-```javascript
+      return value
+    },
+    set: function reactiveSetter (newVal) {...})
+}
+      
+      
 // Dep
 depend () {
   if (Dep.target) {
@@ -490,6 +433,7 @@ depend () {
 
 addSub (sub: Watcher) {
   // dep.subs
+  // 依赖收集观察者
   this.subs.push(sub)
 }
 
@@ -497,9 +441,8 @@ addSub (sub: Watcher) {
 addDep (dep: Dep) {
   const id = dep.id
   if (!this.newDepIds.has(id)) {
-    // watcher.newDepIds
     this.newDepIds.add(id)
-    // watcher.newDeps
+    // 观察者收集依赖
     this.newDeps.push(dep)
     if (!this.depIds.has(id)) {
       dep.addSub(this)
@@ -508,20 +451,30 @@ addDep (dep: Dep) {
 }
 ```
 
-`depend`内部执行的`Dep.target.addDep`，而 `addDep`最终会去执行`dep.subs`会`push` `watcher`，这里就是依赖收集。
+数据对应的`dep`在这时就可以就将当前计算中的`watcher`进行收集，而当前的计算中的`watcher`也会对依赖进行收集，如果数据是对象或数组，那么这个数据是一个**响应式对象**，响应式对象的`childOb.dep`需要进行依赖收集，因为有2个种特殊情况不会触发响应式对象的`setter`：
 
-`_render`过程中，会触发所有数据的`getter`，当所有数据的进行依赖收集后，会执行到`finally`中的`popTarget`方法：
+1. 对象的属性添加或移除
+2. 数组变动
+
+对象属性的添加或移除比较好理解，那是因为新添加的属性没有进行响应式处理，不能触发它的`setter`，而删除的属性已经被删除，那肯定也不能触发它的`setter`，所以只能对这个添加或删除属性的对象进行“`setter`“，这里的`setter`打了引号，这是因为这里`setter`其实是利用了响应式对象本身的`__ob__.dep`（`childOb.dep`），去通知订阅了它变化的`watcher`更新。
+
+数组变动是通过调用数组变异的方法来触发更新，变异的方法内是通过数组的`__ob__.dep`（`childOb.dep`）通知订阅了它变化的`watcher`更新。
+
+最后如果数据是数组，且数组的元素是响应式对象，需要进行它的`childOb.dep`进行依赖收集。
 
 ```javascript
-export function popTarget () {
-  targetStack.pop()
-  Dep.target = targetStack[targetStack.length - 1]
+function dependArray (value: Array<any>) {
+  for (let e, i = 0, l = value.length; i < l; i++) {
+    e = value[i]
+    e && e.__ob__ && e.__ob__.dep.depend()
+    if (Array.isArray(e)) {
+      dependArray(e)
+    }
+  }
 }
 ```
 
-这里将当前`wathcer`从`targetStack`删除，并将`Dep.target`还原成依赖收集之前的`watcher`。
-
-最后执行`this.cleanupDeps`：
+### 依赖收集后的优化
 
 ```javascript
 cleanupDeps () {
@@ -586,7 +539,10 @@ set: function reactiveSetter (newVal) {
 }
 ```
 
-`dep.notify`就是通知`watcher`们去更新：
+派发更新主要有2个步骤：
+
+1. 通知要更新`watcher`，将它们推入到`queue`
+2. 异步执行所有`watcher`更新
 
 ```javascript
 notify () {
@@ -602,11 +558,7 @@ notify () {
     subs[i].update()
   }
 }
-```
 
-遍历`watcher`执行`update`
-
-```javascript
 update () {
   /* istanbul ignore else */
   if (this.lazy) {
@@ -617,22 +569,13 @@ update () {
     queueWatcher(this)
   }
 }
-```
-
-执行`queueWatcher`
-
-```javascript
-const queue: Array<Watcher> = []
-let has: { [key: number]: ?true } = {}
-let waiting = false
-let flushing = false
-
 
 export function queueWatcher (watcher: Watcher) {
   const id = watcher.id
   if (has[id] == null) {
     has[id] = true
     if (!flushing) {
+      // `watcher`推入`queue`
       queue.push(watcher)
     } else {
       // if already flushing, splice the watcher based on its id
@@ -657,7 +600,9 @@ export function queueWatcher (watcher: Watcher) {
 }
 ```
 
-`queueWatcher`先将所有的需要更新的`watcher`，`push`到`queue`中，并且通过`has[id]`确保相同的`watcher`不会重复`push`，然后执行`nextTick`：
+将所有的需要更新的`watcher`，在非更新阶段`push`到`queue`中，并且通过`has[id]`确保相同的`watcher`不会重复`push`，如果是更新阶段，触发了新的`watcher`更新，会找到指定的位置，插入到队列中等待更新。
+
+`nextTick`：
 
 ```javascript
 const callbacks = []
