@@ -60,7 +60,7 @@ function initComputed(vm: Component, computed: Object) {
 }
 ```
 
-在组件的实例上添加`_computedWatchers`属性，作用是存储所有的`computed watcher`，遍历`computed`，获取每个计算属性的`getter`，并将每个计算属性实例化为对应的`computed watcher`，从这里可以看出：计算属性本质是一个`watcher`。最后，判断计算属性不存在于实例上，进行`defineComputed`处理，如果存在，说明该计算属性，已经被初始化过了。
+在组件的实例上添加`_computedWatchers`属性，作用是存储所有的`computed watcher`，遍历`computed`，获取每个计算属性的`getter`，并为每个计算属性实例化为对应的`computed watcher`，从这里可以看出：计算属性本质是一个`watcher`。最后，判断计算属性不存在于实例上，进行`defineComputed`处理，如果存在，说明该计算属性，已经被初始化过了。
 
 实例化`computed watcher`：
 
@@ -97,7 +97,7 @@ constructor(
 }
 ```
 
-实例化`computed watcher`和实例化渲染`watcher`有一些不同，`computed watcher`的`lazy`属性是`true`，所以最后会导致，不能及时求值，这是因为这时候求值，就不能被它依赖的数据进行依赖收集。
+实例化`computed watcher`时，由于`computed watcher`的`lazy`属性是`true`，不会立刻执行`this.get`进行求值。
 
 回到`initComputed`，执行`defineComputed`
 
