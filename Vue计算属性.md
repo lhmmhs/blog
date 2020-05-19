@@ -192,7 +192,7 @@ function initComputed(Comp) {
 
 ## 计算属性被依赖收集
 
-计算属性被依赖收集时，会触发它的`getter`：
+计算属性被访问时，会触发它的`getter`：
 
 ```javascript
 return function computedGetter() {
@@ -237,7 +237,7 @@ export function pushTarget (target: ?Watcher) {
 }
 ```
 
-执行`evaluate`的过程中，会将全局`Dep.target`更新为`computed watcher`，此时，执行`computed watcher`的`getter`，这个`getter`就是用户定义的计算属性，而这个`getter`内，**会访问到依赖的数据，从而触发这个数据的`getter`，进行依赖收集把当前的`Dep.target`收集起来**。收集完毕后，将计算属性的结果缓存到`watcher.value`中，并设置重置`this.dirty`为`false`，如果再次访问这个计算属性，就不会进行计算，而是直接返回这个缓存的值。
+执行`evaluate`的过程中，会将全局`Dep.target`更新为`computed watcher`，此时，执行`computed watcher`的`getter`，这个`getter`就是用户定义的计算属性，`getter`内，**会访问到依赖的数据，从而触发这个数据的`getter`，进行依赖收集把当前的`Dep.target`收集起来**，收集完毕后，将计算属性的结果缓存到`watcher.value`中，并设置`this.dirty`为`false`，如果再次访问这个计算属性，就不会进行计算，而是直接返回这个缓存的值。
 
 ```javascript
 if (Dep.target) {
