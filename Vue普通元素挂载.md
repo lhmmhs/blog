@@ -1,6 +1,6 @@
 版本是v2.6.11
 
-`Vue`普通元素挂载的过程，涉及到两个核心步骤是`render`和`patch`，其中`render`是将`Vue`实例转化为`vnode`的过程，而`patch`是将`vnode`转化为真实`DOM`的并挂载过程。
+`Vue`普通元素挂载的过程，涉及到两个核心步骤是`render`和`patch`，其中`render`是创建`vnode`的过程，而`patch`是将`vnode`转化为真实`DOM`的并挂载过程。
 
 ```html
 <div id="app">
@@ -45,7 +45,7 @@ Vue.prototype._init = function (options?: Object) {
 }
 ```
 
-挂载是通过执行`vm.$mount`实现的，由于`Vue`可以在不同的平台运行，所以`$mount`实现在不同平台是不同的，`web`平台下，并且模板已经进行编译过了，所以它的实现如下：
+挂载是通过执行`vm.$mount`实现的，由于`Vue`可以在不同的平台运行，所以`$mount`实现在不同平台是不同的，`web`平台下，实现如下：
 
 ```javascript
 Vue.prototype.$mount = function (
@@ -59,7 +59,7 @@ Vue.prototype.$mount = function (
 
 逻辑很简单，找到`el`元素，执行`mountComponent`函数挂载。
 
-如果没有编译过，那么实如下：
+`$mount`实现除了与平台相关，还与编译相关，用户编写模板的情况下，是需要编译的，那么它的实现如下：
 
 ```javascript
 const mount = Vue.prototype.$mount
@@ -97,7 +97,7 @@ Vue.prototype.$mount = function (
 }
 ```
 
-如上，先将原始的`$mount`缓存，然后修改`$mount`方法，修改后的`$mount`主要是用来编译模板获取`render`函数用的，最后会调用原始的`$mount`方法进行挂载。
+先将原始的`$mount`缓存，然后修改`$mount`方法，修改后的`$mount`主要是用来编译模板，获取编译后的`render`函数，最后会调用原始的`$mount`方法进行挂载。
 
 `mountComponent`源码：
 
@@ -171,7 +171,14 @@ Vue.prototype._render = function (): VNode {
 }
 ```
 
-调用`render.call(vm._renderProxy, vm.$createElement)`，`render`是可以接收一个参数的，这个参数是一个方法，它是用来创建`vnode`，也就是`vm.$createElement`，源码：
+核心是执行`render.call`，这个`render`有两种情况：
+
+1. 用户手写`render`
+2. 编译生成的`render`
+
+
+它们的实现如下：
+
 
 ```javascript
 export function initRender (vm: Component) {
@@ -187,20 +194,18 @@ export function initRender (vm: Component) {
 }
 ```
 
-`vm._c`和`vm.$createElement`都是`vm.$createElement`的实现，前者是编译器生成`render`时会使用，后者是用户手写`render`时使用，最终都会执行`createElement`函数。
+`vm._c`是编译生成的`render`，`vm.$createElement`用户手写的`render`，它们最终都会执行`createElement`。
 
-根据例子而言，是编译器生成的`render`：
+根据例子而言，编译器生成的`render`如下：
 
 ```javascript
-(function anonymous() {
-    with (this) {
-        return _c('div', {
-            attrs: {
-                "id": "app"
-            }
-        }, [_v(_s(message))])
-    }
-})
+with (this) {
+    return _c('div', {
+        attrs: {
+            "id": "app"
+        }
+    }, [_v(_s(message))])
+}
 ```
 
 `createElement`函数源码：
@@ -214,21 +219,10 @@ export function createElement (
   normalizationType: any,
   alwaysNormalize: boolean
 ): VNode | Array<VNode> {
-  if (Array.isArray(data) || isPrimitive(data)) {
-    normalizationType = children
-    children = data
-    data = undefined
-  }
-  if (isTrue(alwaysNormalize)) {
-    normalizationType = ALWAYS_NORMALIZE
-  }
+  // ...
   return _createElement(context, tag, data, children, normalizationType)
 }
-```
 
-最终是执行`_createElement`函数执行，源码：
-
-```javascript
 export function _createElement (
   context: Component,
   tag?: string | Class<Component> | Function | Object,
@@ -243,6 +237,11 @@ export function _createElement (
     ns = (context.$vnode && context.$vnode.ns) || config.getTagNamespace(tag)
     if (config.isReservedTag(tag)) {
       // ...
+      // 普通元素vnode
+      vnode = new VNode(
+        config.parsePlatformTagName(tag), data, children,
+        undefined, undefined, context
+      )
     } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
       // component
       vnode = createComponent(Ctor, data, context, children, tag)
@@ -271,7 +270,13 @@ export function _createElement (
 }
 ```
 
-如上，`_createElement`根据`tag`来区分`vnode`种类，`tag`为字符串的情况下，可能是普通元素或是组件，否则是组件，最后会返回创建好的`vnode`。
+`createElement`最终是执行`_createElement`函数执行，源码：
+
+`_createElement`是真正创建`vnode`的函数，它根据`tag`来创建不同种类的`vnode`：
+
+1. `tag`是字符串，普通元素
+
+2. `tag`不是字符串，组件
 
 ### patch
 
@@ -297,13 +302,13 @@ Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
 }
 ```
 
-`_update`方法内部执行的是`vm.__patch__`，`vm.__patch__`可以进行首次渲染，也可以进行数据更新后的渲染，其判断的依据是`prevVnode`，首次渲染`vm._vnode`为`undefined`，所以`prevVnode`也是`undefined`。
+`_update`方法内部执行的是`vm.__patch__`，`vm.__patch__`可以进行首次渲染，也可以进行数据更新后的渲染，其判断的依据是`prevVnode`。
 
 ```javascript
 Vue.prototype.__patch__ = inBrowser ? patch : noop
 ```
 
-`vm.__patch__`方法的实现不同平台也是不同的，在`web`平台，如果是浏览器环境，实现如下：
+`vm.__patch__`方法的实现，	不同平台也是不同的，在`web`平台，如果是浏览器环境，实现如下：
 
 ```javascript
 const modules = platformModules.concat(baseModules)
@@ -373,7 +378,7 @@ export function createPatchFunction (backend) {
 
 最终返回的`patch`函数就是`vm.__patch__`。
 
-根据例子分析这个`patch`函数，它的第一个参数是模板中的`<div id="app">`元素，第二个参数是`div`对应的`vnode`，`patch`过程中，会先将`<div id="app">`通过执行`emptyNodeAt`转化为`vnode`，然后获取它的父节点，执行`createElm`：
+根据例子分析这个`patch`函数，它的第一个参数`oldVnode`是模板中的`<div id="app">`，第二个参数是`render`创建的`vnode`，`patch`过程中，会先将`<div id="app">`通过执行`emptyNodeAt`转化为`vnode`，然后获取它的父节点，案例中的`body`，执行`createElm`：
 
 ```javascript
 function createElm (
@@ -420,9 +425,7 @@ function createElm (
 }
 ```
 
-如上，先拿到`vnode.tag`，`tag`存在，创建一个占位符元素，由于现在的`vnode`是`<div id="app">`所对应的，所以占位符元素是`<div>`。
-
-执行`createElm`去遍历`vnode`的`children`：
+根据`vnode.tag`创建对应的真实`DOM`，并用`vnode.elm`保留其引用，然后去执行`createChildren`去遍历`vnode`的`children`：
 
 ```javascript
 function createChildren (vnode, children, insertedVnodeQueue) {
@@ -439,11 +442,11 @@ function createChildren (vnode, children, insertedVnodeQueue) {
 }
 ```
 
-`children`是当前`vnode`下的所有子`vnode`，遍历后递归执行`createElm`。
+`children`是当前`vnode`下的所有子`vnode`，遍历并递归执行`createElm`。
 
-根据案例，`children`中只有一个元素文本节点的`vnode`，也就是`hello world`，此时递归执行`createElm`，会命中最后的文本节点逻辑，先执行原生`DOM`的`api`创建文本节点，然后执行`insert`，将它插入到新创建的占位符元素中。
+根据案例，`children`中只有一个元素文本节点的`vnode`，也就是`hello world`，此时递归执行`createElm`，会命中最后的文本节点逻辑，先执行原生`DOM`的`api`创建文本节点，然后执行`insert`，将它插入到新创建的真实`DOM`中。
 
-`insert`是真正挂载`DOM`的函数：
+`insert`：
 
 ```javascript
 function insert (parent, elm, ref) {
@@ -469,7 +472,7 @@ export function appendChild (node: Node, child: Node) {
 
 这里是调用原生的`api`进行真正的`DOM`操作。
 
-回到第一次执行`createElm`的时候，执行`insert`，此时是将占位符元素插入到`body`中，执行到这里`html`中会有2个`<div id="app">`的元素，如下：
+回到`createElm`，执行`insert`，此时是将真实`DOM`插入到`body`中，执行到这里时，`body`中会有2个`div`，如下：
 
 ```html
 <body>
@@ -479,4 +482,3 @@ export function appendChild (node: Node, child: Node) {
 ```
 
 回到`patch`，执行`removeVnodes`会将原先的`<div id="app">{{message}}</div>`删除。
-
