@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    /**
+     * @param {number[]} nums
+     * @param {number} target
+     * @return {number[]}
+     */
+    var searchRange = function (nums, target) {
+      if (nums.length === 0) return [-1, -1]
+
+      let first = searchFirstPosition(nums, target)
+      if (first === -1) return [-1, -1]
+
+      let last = searchLastPosition(nums, target)
+      return [first, last]
+    };
+
+    // 寻找目标值左侧边界
+    var searchFirstPosition = function (nums, target) {
+      let left = 0
+      let right = nums.length - 1
+      while (left < right) {
+        let mid = Math.floor((left + right) / 2)
+        if (nums[mid] < target) {
+          left = mid + 1
+        } else {
+          right = mid
+        }
+      }
+      if (nums[left] === target) return left
+      return -1
+    }
+
+    // 寻找目标值右侧边界
+    var searchLastPosition = function (nums, target) {
+      let left = 0
+      let right = nums.length - 1
+      while (left < right) {
+        let mid = Math.floor((left + right + 1) / 2)
+        if (nums[mid] > target) {
+          right = mid - 1
+        } else {
+          left = mid
+        }
+      }
+
+      return left
+    }
+
+    console.log(searchRange([5, 7, 7, 8, 8, 10], 1))
+
+  </script>
+</body>
+
+</html>
