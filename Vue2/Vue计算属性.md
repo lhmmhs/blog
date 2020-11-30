@@ -240,36 +240,15 @@ export function pushTarget (target: ?Watcher) {
 执行`evaluate`的过程中，会将全局`Dep.target`更新为`computed watcher`，此时，执行`computed watcher`的`getter`，这个`getter`就是用户定义的计算属性，`getter`内，**会访问到依赖的数据，从而触发这个数据的`getter`，进行依赖收集把当前的`Dep.target`收集起来**，收集完毕后，将计算属性的结果缓存到`watcher.value`中，并设置`this.dirty`为`false`，如果再次访问这个计算属性，就不会进行计算，而是直接返回这个缓存的值。
 
 ```javascript
-if (Dep.target) {
-  watcher.depend()
-}
-
-depend() {  
-  let i = this.deps.length
+Watcher.prototype.depend = function depend () {
+  var i = this.deps.length;
   while (i--) {
-    this.deps[i].depend()
+    this.deps[i].depend();
   }
-}
-
-depend() {
-  if (Dep.target) {
-    Dep.target.addDep(this)
-  }
-}
-
-addDep(dep: Dep) {
-  const id = dep.id
-  if (!this.newDepIds.has(id)) {
-    this.newDepIds.add(id)
-    this.newDeps.push(dep)
-    if (!this.depIds.has(id)) {
-      dep.addSub(this)
-    }
-  }
-}
+};
 ```
 
-如果计算属性依赖的数据没有在模板中声明，那么该数据是没有收集到渲染`watcher`的。在被依赖的数据收集到`computed watcher`后，会执行`computed watcher`的`depend`去遍历自身的`dep`，将收集自身但是没有收集渲染`watcher`的`dep`对渲染`watcher`进行收集。
+如果计算属性依赖的数据没有在模板中声明，那么该数据的`dep`是没有收集到渲染`watcher`的。在被依赖的数据收集到`computed watcher`后，会执行`computed watcher`的`depend`去遍历自身的`deps`，将收集自身但是没有收集渲染`watcher`数据的`dep`对渲染`watcher`进行收集。
 
 ## 计算属性被“派发更新”
 
