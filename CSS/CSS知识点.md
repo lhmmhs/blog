@@ -60,7 +60,11 @@ flex-shrink x flex-basis / Σ(flex-shrink x flex-basis)
 - BFC 容器的子元素不会影响外部
 - BFC 的触发条件
 
-  1.  根元素 2. 浮动元素 3. 绝对定位元素 4. overflow 为 auto、scroll 或 hidden 5. display 的值为 table-cell、table-caption 和 inline-block 中的任何一个
+1. 根元素
+2. 浮动元素
+3. 绝对定位元素
+4. overflow为hidden
+5. display为值为 table-cell、table-caption 和 inline-block
 
 - 作用
   1. 清除浮动
@@ -101,8 +105,7 @@ flex-shrink x flex-basis / Σ(flex-shrink x flex-basis)
 
 - 在 Z 轴上拥有层叠上下文的元素比普通元素显示顺序高
 - 层叠上下文可以嵌套，后代元素受限制于祖先元素
-- 兄弟元素的层叠上下文相互独立
-- 每个层叠上下文自称体系，元素发生层叠的时候，整个元素被认为是在父层叠上下文的层叠顺序中
+- 兄弟元素的层叠上下文相互独
 
 触发条件：
 
