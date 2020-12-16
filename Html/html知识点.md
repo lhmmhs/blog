@@ -13,7 +13,7 @@
 * localStorage同源不同页面可以共享
 * sessionStorage同源不同页面不可以共享
 * localStorage页面关闭，不会清除
-* localStorage页面关闭，会清除
+* sessionStorage页面关闭，会清除
 
 ### 3.img的title和alt区别
 
