@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+
+    // Definition for a Node.
+    function Node(val, next = null, random = null) {
+      this.val = val;
+      this.next = next;
+      this.random = random;
+    };
+
+
+    /**
+     * @param {Node} head
+     * @return {Node}
+     */
+    var copyRandomList = function (head) {
+      let map = new Map()
+      let copy = function (node) {
+        if (!node) return node
+        if (map.has(node)) {
+          return map.get(node)
+        }
+        let cur = new Node(node.val, null, null)
+        map.set(node, cur)
+        cur.next = copy(node.next)
+        cur.random = copy(node.random)
+        return cur
+
+      }
+
+      return copy(head)
+    };
+
+
+    let linkedList = {
+      val: 7,
+      next: {
+        val: 13,
+        next: {
+          val: 11,
+          next: {
+            val: 10,
+            next: {
+              val: 1,
+              next: null
+            }
+          }
+        }
+      }
+    }
+
+    // console.log(copyRandomList(linkedList))
+
+
+    function copyRandomList1(head) {
+      if (!head) return head
+
+      let ptr = head
+      // A->B->C 转化为 A -> A'-> B -> B'-> C -> C'
+      while (ptr) {
+        // 复制节点
+        let clone = new Node(ptr.val)
+        // A'->B
+        clone.next = ptr.next
+        // A ->A'
+        ptr.next = clone
+        // ptr -> B
+        ptr = clone.next
+      }
+
+      ptr = head
+      while (ptr) {
+        ptr.next.random = ptr.random ? ptr.random.next : null
+        ptr = ptr.next.next
+      }
+
+
+      // A-> A'-> B -> B'-> C-> C' 拆分为 A->B->C 和 A'-> B'-> C'
+      // A->B->C
+      let ptrOldList = head
+      // A'-> B'-> C'
+      let ptrNewList = head.next
+      let ret = head.next
+      while (ptrOldList) {
+        ptrOldList.next = ptrOldList.next.next
+        ptrNewList.next = ptrNewList.next ? ptrNewList.next.next : null
+        ptrOldList = ptrOldList.next
+        ptrNewList = ptrNewList.next
+      }
+
+      return ret
+    }
+
+    console.log(copyRandomList1(linkedList))
+  </script>
+</body>
+
+</html>

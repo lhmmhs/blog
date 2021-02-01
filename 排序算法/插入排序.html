@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    var arr = [3, 6, 5, 1, 2, 4]
+
+    // 原理：将无序数列的第1个元素与有序数列的元素从后向前比较，找到合适位置插入
+
+    function insertionSort(arr) {
+      var len = arr.length;
+      for (let i = 1; i < len; i++) {
+        // arr[j] 有序数列最后1个元素
+        // arr[j+1] 无序数列第1个元素
+        // 内部循环是将无序数列的第一个元素与有序数列的元素从后向前逐一比较
+        for (let j = i - 1; j >= 0 && arr[j] > arr[j + 1]; j--) {
+          let temp = arr[j];
+          arr[j] = arr[j + 1];
+          arr[j + 1] = temp;
+        }
+      }
+      return arr;
+    }
+
+    console.time('insertionSort')
+    insertionSort(arr)
+    console.timeEnd('insertionSort')
+  </script>
+</body>
+
+</html>

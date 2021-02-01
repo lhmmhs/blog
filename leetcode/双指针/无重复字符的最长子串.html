@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function lengthOfLongestSubstring(str) {
+      const set = new Set()
+      const n = str.length
+      // 右指针
+      let rk = -1
+      let ans = 0
+
+      for (let i = 0; i < n; ++i) {
+        if (i != 0) {
+          // 左指针右移动，移除一个字符
+          set.delete(str.charAt(i - 1))
+        }
+        while (rk + 1 < n && !set.has(str.charAt(rk + 1))) {
+          // 右指针移动
+          set.add(str.charAt(rk + 1))
+          ++rk
+        }
+
+        ans = Math.max(ans, rk - i + 1)
+      }
+      return ans
+    }
+
+
+    var lengthOfLongestSubstring1 = function (s) {
+      let occ = new Set()
+      let len = 0
+      let max = 0
+      for (let i = 0; i < s.length; i++) {
+        if (occ.has(s[i])) {
+          occ.delete(occ.values().next().value)
+        }
+        occ.add(s[i])
+        max = Math.max(max, occ.size)
+      }
+      return max
+    };
+
+    var lengthOfLongestSubstring2 = function (s) {
+      let map = new Map(), max = 0
+      for (let i = 0, j = 0; j < s.length; j++) {
+        if (map.has(s[j])) {
+          i = Math.max(map.get(s[j]) + 1, i)
+        }
+        max = Math.max(max, j - i + 1)
+        map.set(s[j], j)
+      }
+      return max
+    };
+
+
+    let res = lengthOfLongestSubstring2("abcbdebb")
+
+    console.log(res)
+
+
+
+  </script>
+</body>
+
+</html>

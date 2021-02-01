@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    let t = {
+      val: 1,
+      children: [
+        {
+          val: 3,
+          children: [
+            {
+              val: 5,
+              children: []
+            }, {
+              val: 6,
+              children: []
+            },
+          ]
+        },
+        {
+          val: 2,
+          children: [
+            {
+              val: 7,
+              children: []
+            }, {
+              val: 8,
+              children: []
+            },
+          ]
+        },
+        {
+          val: 4,
+          children: []
+        },
+      ]
+    }
+
+    var maxDepth = function (root) {
+      if (!root) return 0
+      let deep = 1
+      let stack = [root]
+      while (stack.length) {
+        let len = stack.length
+        for (let i = 0; i < len; i++) {
+          let node = stack.shift()
+          for (let i = 0; i < node.children.length; i++) {
+            stack.push(node.children[i])
+          }
+        }
+        if (stack.length) deep++
+      }
+      return deep
+    };
+
+    console.log(maxDepth(t))
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    var arr = [3, 6, 5, 1, 2, 4]
+    function quickSort(arr, left = 0, right = arr.length - 1) {
+
+      if (left < right) {
+        var pivot = findIndex(arr, left, right)
+        quickSort(arr, left, pivot - 1)
+        quickSort(arr, pivot + 1, right)
+      }
+
+      return arr;
+    }
+
+    // 思想
+
+    // 基点假设是第一个元素
+    // 元素比支点大 支点不需要移动 因为支点的右侧元素肯定比支点大
+    // 元素比支点小 元素应该在支点左侧 所以支点应该向右侧移动一位 
+
+    function findIndex(arr, left, right) {
+      var pivot = left, // 支点
+        index = pivot + 1 // index是记录比支点大的元素的索引 也是所有小于支点的元素个数
+      for (var i = index; i <= right; i++) {
+        // 元素比支点小 元素应该在支点左侧 所以支点应该向右侧移动一位 
+        if (arr[i] < arr[pivot]) {
+          // 比支点大的元素和比支点小的元素 互换
+          // 只有当 i和index不同时 才能互换
+          swap(arr, i, index)
+          index++;
+        }
+      }
+      swap(arr, pivot, index - 1) // 与基点交换
+      return index - 1
+    }
+
+    function swap(arr, i, j) {
+      var temp = arr[i]
+      arr[i] = arr[j]
+      arr[j] = temp
+    }
+
+
+    console.time('1')
+    quickSort(arr)
+    console.timeEnd('1')
+  </script>
+</body>
+
+</html>

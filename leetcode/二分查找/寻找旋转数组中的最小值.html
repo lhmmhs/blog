@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+
+    var findMin = function (nums) {
+      let left = 0
+      let right = nums.length - 1
+
+      if (nums[left] < nums[right]) return nums[left]
+
+
+      while (left < right) {
+        let mid = Math.floor((left + right) / 2)
+
+        if (nums[mid] <= nums[left]) {   // [mid, right]升序
+          right = mid
+        } else if (nums[mid] > nums[left]) { // [left, mid]升序
+          left = mid + 1
+        }
+      }
+
+      return nums[left]
+    };
+
+
+    var findMin1 = function (nums) {
+      let left = 0
+      let right = nums.length - 1
+      while (left < right) {
+        let mid = Math.floor((left + right) / 2)
+
+        if (nums[mid] < nums[right]) {   // [mid, right]升序
+          right = mid
+        } else if (nums[mid] > nums[right]) { // [left, mid]升序
+          left = mid + 1
+        }
+      }
+
+      return nums[left]
+    };
+
+    var findMin2 = function (nums) {
+      let left = 0
+      let right = nums.length - 1
+      if (nums[left] < nums[right]) return nums[left]
+      while (left <= right) {
+        let mid = Math.floor((left + right) / 2)
+        if (nums[mid] > nums[mid + 1]) {
+          return nums[mid + 1]
+        }
+
+        if (nums[mid - 1] < nums[mid]) {
+          return nums[mid - 1]
+        }
+
+        if (nums[mid] > nums[0]) {
+          left = mid + 1
+        } else if (nums[mid] < nums[0]) {
+          right = mid - 1
+        }
+
+      }
+    }
+
+
+    console.log(findMin1([2, 3, 4, 0, 1]))
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function ListNode(val) {
+      this.val = val;
+      this.next = null;
+      this.prev = null;
+    }
+
+
+    /**
+     * Initialize your data structure here.
+     */
+    var MyLinkedList = function () {
+      this.size = 0
+      this.head = null
+    };
+
+    /**
+     * Get the value of the index-th node in the linked list. If the index is invalid, return -1. 
+     * @param {number} index
+     * @return {number}
+     */
+    MyLinkedList.prototype.get = function (index) {
+      if (this.size === 0) return -1
+      if (index < 0 || index > this.size - 1) return -1
+      let cur = this._getItem(index)
+      return cur.val
+    };
+
+    /**
+     * Add a node of value val before the first element of the linked list. After the insertion, the new node will be the first node of the linked list. 
+     * @param {number} val
+     * @return {void}
+     */
+    MyLinkedList.prototype.addAtHead = function (val) {
+      let listNode = new ListNode(val)
+      listNode.next = this.head
+      if (this.head) {
+        this.head.prev = listNode
+      }
+      this.head = listNode
+      this.size++
+    };
+
+    /**
+     * Append a node of value val to the last element of the linked list. 
+     * @param {number} val
+     * @return {void}
+     */
+    MyLinkedList.prototype.addAtTail = function (val) {
+      let tail = this._getItem(this.size - 1)
+      if (!tail) return this.addAtHead(val)
+      let listNode = new ListNode(val)
+      listNode.prev = tail
+      tail.next = listNode
+      this.size++
+
+    };
+
+    /**
+     * Add a node of value val before the index-th node in the linked list. If index equals to the length of linked list, the node will be appended to the end of linked list. If index is greater than the length, the node will not be inserted. 
+     * @param {number} index 
+     * @param {number} val
+     * @return {void}
+     */
+    MyLinkedList.prototype.addAtIndex = function (index, val) {
+      if (index > this.size) return
+      if (index <= 0) return this.addAtHead(val)
+      if (index === this.size) return this.addAtTail(val)
+      let suc = this._getItem(index)
+      let pred = suc.prev
+      let cur = new ListNode(val)
+      cur.prev = pred
+      cur.next = suc
+      pred.next = cur
+      suc.prev = cur
+      this.size++
+    };
+
+    /**
+     * Delete the index-th node in the linked list, if the index is valid. 
+     * @param {number} index
+     * @return {void}
+     */
+    MyLinkedList.prototype.deleteAtIndex = function (index) {
+      if (!this.size) return
+      if (index < 0 || index > this.size - 1) return
+      let cur = this._getItem(index)
+      let pred = cur.prev
+      let suc = cur.next
+      if (pred && !suc) {
+        // 删除最后1个节点
+        pred.next = null
+      } else if (suc && !pred) {
+        // 删除第1个节点
+        suc.prev = null
+        this.head = suc
+      } else if (pred && suc) {
+        pred.next = suc
+        suc.prev = pred
+      } else if (pred == null && suc == null) cur = null
+      this.size--
+    };
+
+
+    MyLinkedList.prototype._getItem = function (index) {
+      if (this.size < 0) return null
+      if (index < 0 || index > this.size - 1) return null
+      let cur = this.head
+      while (index > 0) {
+        cur = cur.next
+        index--
+      }
+      return cur
+    };
+
+
+    var obj = new MyLinkedList()
+    obj.addAtHead(7)
+    obj.addAtTail(0)
+    obj.deleteAtIndex(1)
+    obj.addAtTail(5)
+    obj.addAtIndex(1, 1)
+    obj.addAtIndex(2, 6)
+    obj.deleteAtIndex(2)
+    obj.deleteAtIndex(1)
+    obj.addAtTail(7)
+    obj.addAtIndex(1, 7)
+    obj.addAtTail(6)
+
+
+
+    console.log(obj)
+
+
+  </script>
+</body>
+
+</html>

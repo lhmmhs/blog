@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    let left = {
+      val: 7,
+      left: null,
+      right: null
+    }
+
+    let right = {
+      val: 4,
+      left: null,
+      right: null
+    }
+
+    let tree = {
+      val: 3,
+      left: {
+        val: 5,
+        left: {
+          val: 6,
+          left: null,
+          right: null
+        },
+        right: {
+          val: 2,
+          left,
+          right
+        }
+      },
+      right: {
+        val: 1,
+        left: {
+          val: 0,
+          left: null,
+          right: null
+        },
+        right: {
+          val: 8,
+          left: null,
+          right: null
+        }
+      }
+    }
+
+    var lowestCommonAncestor = function (root, p, q) {
+      if (root == null || root == p || root == q) {
+        return root;
+      }
+      let left = lowestCommonAncestor(root.left, p, q);
+      let right = lowestCommonAncestor(root.right, p, q);
+      if (left && right) {
+        return root;
+      } else if (left) {
+        return left;
+      } else if (right) {
+        return right;
+      }
+      return null;
+    };
+
+    console.log(lowestCommonAncestor(tree, left, right))
+
+
+  </script>
+</body>
+
+</html>

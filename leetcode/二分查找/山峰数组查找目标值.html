@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+
+    var findInMountainArray = function (target, mountainArr) {
+      let end = mountainArr.length - 1
+      let mountainIndex = getMountainIndex(mountainArr, end)
+      let left = getAscArr(mountainArr, target, 0, mountainIndex)
+      let right = getDescArr(mountainArr, target, mountainIndex, end)
+      if (left === -1 && right === -1) {
+        return -1
+      }
+
+      if (left !== -1 && right === -1) {
+        return left
+      }
+
+      if (left === -1 && right !== -1) {
+        return right
+      }
+
+      return left < right ? left : right
+    };
+
+    // 查找升序数组中的目标值
+    var getAscArr = function (arr, target, left, right) {
+      while (left < right) {
+        let mid = Math.floor((left + right) / 2)
+        if (arr[mid] < target) {
+          left = mid + 1
+        } else {
+          right = mid
+        }
+      }
+      return arr[left] == target ? left : -1
+    }
+
+    // 查找降序数组中的目标值
+    var getDescArr = function (arr, target, left, right) {
+      while (left < right) {
+        let mid = Math.floor((left + right) / 2)
+        if (arr[mid] > target) {
+          left = mid + 1
+        } else {
+          right = mid
+        }
+      }
+      return arr[left] == target ? left : -1
+    }
+
+    var getMountainIndex = function (arr, right) {
+      let left = 0
+      while (left < right) {
+        let mid = Math.floor((left + right) / 2)
+        if (arr[mid] > arr[mid + 1]) {
+          right = mid
+        } else {
+          left = mid + 1
+        }
+      }
+      return left
+    }
+
+    console.log(findInMountainArray(1, [0, 5, 3, 1]));
+
+
+    // console.log(getDescArr([0, 5, 3, 1], 1, 1, 3));
+  </script>
+</body>
+
+</html>

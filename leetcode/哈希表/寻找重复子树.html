@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    var findDuplicateSubtrees = function (root) {
+      const count = new Map()
+      const ans = []
+
+      const collect = (node) => {
+        if (!node) {
+          return '#'
+        }
+        const key = node.val + ',' + collect(node.left) + collect(node.right)
+        if (count.has(key)) {
+          count.set(key, count.get(key) + 1)
+        } else {
+          count.set(key, 1)
+        }
+        if (count.get(key) === 2) {
+          ans.push(node)
+        }
+        return key
+      }
+
+      collect(root)
+      return ans
+    };
+
+    let tree = {
+      val: 1,
+      left: {
+        val: 2,
+        left: {
+          val: 4,
+          left: null,
+          right: null
+        },
+        right: null
+      },
+      right: {
+        val: 3,
+        left: {
+          val: 2,
+          left: {
+            val: 4,
+            left: null,
+            right: null
+          },
+          right: null
+        },
+        right: {
+          val: 4,
+          left: null,
+          right: null
+        }
+      }
+    }
+
+
+
+    /**
+   * Definition for a binary tree node.
+   * function TreeNode(val, left, right) {
+   *     this.val = (val===undefined ? 0 : val)
+   *     this.left = (left===undefined ? null : left)
+   *     this.right = (right===undefined ? null : right)
+   * }
+   */
+    /**
+     * @param {TreeNode} root
+     * @return {TreeNode[]}
+     */
+    var findDuplicateSubtrees1 = function (root) {
+      let map = {}
+      let res = []
+      let _findDuplicateSubtrees = function (root) {
+        if (root == null) {
+          return '#'
+        }
+
+        let key = root.val + ',' + _findDuplicateSubtrees(root.left) + _findDuplicateSubtrees(root.right)
+        if (map[key]) {
+          map[key]++
+        } else {
+          map[key] = 1
+        }
+        if (map[key] === 2) {
+          res.push(root)
+        }
+        return key
+      }
+
+      _findDuplicateSubtrees(root)
+
+      return res
+    };
+
+
+    let tree1 = {
+      val: 2,
+      left: {
+        val: 1,
+        left: {
+          val: 11,
+          left: null,
+          right: null
+        },
+        right: null
+      },
+      right: {
+        val: 11,
+        left: {
+          val: 1,
+          left: null,
+          right: null
+        },
+        right: null
+      }
+    }
+
+    console.log(findDuplicateSubtrees1(tree1))
+
+  </script>
+</body>
+
+</html>

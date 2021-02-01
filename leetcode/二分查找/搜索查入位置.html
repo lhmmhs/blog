@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+
+    function searchInsert(nums, target) {
+      if (nums.length === 0) return 0
+      let left = 0
+      // 插入的位置可以是最后一个元素的后面
+      let right = nums.length
+      while (left < right) {
+        let mid = Math.floor((left + right) / 2)
+        if (nums[mid] < target) {
+          left = mid + 1
+        } else {
+          right = mid
+        }
+
+        // let mid = Math.floor((left + right + 1) / 2)
+        // if (nums[mid] > target) {
+        //   right = mid - 1
+        // } else {
+        //   left = mid
+        // }
+      }
+
+      return left
+    }
+
+    console.log(searchInsert([1, 2, 3, 4], 0))
+
+
+  </script>
+</body>
+
+</html>

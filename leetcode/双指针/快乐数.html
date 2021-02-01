@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    var isHappy = function (n) {
+      let sum = function (n) {
+        n = n + ''
+        let res = 0
+        for (let num of n) {
+          res += num * num
+        }
+        return res
+      }
+      let slow = sum(n)
+      let fast = sum(slow)
+      while (fast !== slow) {
+        slow = sum(slow)
+        fast = sum(sum(fast))
+      }
+      return slow === 1
+    };
+
+
+    console.log(isHappy(19))
+  </script>
+</body>
+
+</html>

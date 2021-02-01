@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function deleteNode(root, key) {
+      if (key > root.val) {
+        root.right = deleteNode(root.right, key)
+      } else if (key < root.val) {
+        root.left = deleteNode(root.left, key)
+      } else {
+        if (root.left == null && root.right == null) {
+          root = null
+        } else if (root.left) {
+          root.val = predecessor(root)
+          root.left = deleteNode(root.left, root.val)
+        } else if (root.right) {
+          root.val = successor(root)
+          root.right = deleteNode(root.right, root.val)
+        }
+      }
+      return root
+    }
+
+    // 后继，右子树中最小值
+    function successor(root) {
+      let node = root.right
+      while (node.left) node = node.left
+      return node.val
+    }
+
+    // 前驱，左子树中最大值
+    function predecessor(root) {
+      let node = root.left
+      while (node.right) node = node.right
+      return node.val
+    }
+
+    let Tree = {
+      val: 5,
+      left: {
+        val: 3,
+        left: {
+          val: 2,
+          left: null,
+          right: null
+        },
+        right: {
+          val: 4,
+          left: null,
+          right: null
+        }
+      },
+      right: {
+        val: 6,
+        left: null,
+        right: {
+          val: 7,
+          left: null,
+          right: null
+        }
+      }
+    }
+
+    console.log(deleteNode(Tree, 3))
+
+  </script>
+</body>
+
+</html>

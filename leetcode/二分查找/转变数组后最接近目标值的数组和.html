@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function findBestValue(arr, target) {
+      let left = 0;
+      let right = 0;
+      // 注意：
+      for (let num of arr) {
+        right = Math.max(right, num);
+      }
+
+      while (left < right) {
+        let mid = Math.floor(left + (right - left) / 2);
+        let sum = calculateSum(arr, mid);
+        // 计算第 1 个使得转变后数组的和大于等于 target 的阈值 threshold
+        if (sum < target) {
+          // 严格小于的一定不是解
+          left = mid + 1;
+        } else {
+          // 大于等于   
+          right = mid;
+        }
+      }
+
+      // 比较阈值线分别定在 left - 1 和 left 的时候与 target 的接近程度
+      let sum1 = calculateSum(arr, left - 1);
+      let sum2 = calculateSum(arr, left);
+      if (target - sum1 <= sum2 - target) {
+        return left - 1;
+      }
+      return left;
+    }
+
+
+    function calculateSum(arr, threshold) {
+      let sum = 0;
+      for (let num of arr) {
+        sum += Math.min(num, threshold);
+      }
+      return sum;
+    }
+
+    console.log(findBestValue([4, 9, 3], 10))
+  </script>
+</body>
+
+</html>

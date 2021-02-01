@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    /**
+   * @param {string} s
+   * @return {number}
+   */
+    // var firstUniqChar = function (s) {
+    //   let map = {};
+    //   for (let i = 0; i < s.length; i++) {
+    //     map[s[i]] = map[s[i]] || 0;
+    //     map[s[i]]++
+    //   }
+    //   for (let i = 0; i < s.length; i++) {
+    //     if (map[s[i]] === 1) return i;
+    //   }
+    //   return -1;
+    // };
+
+    var firstUniqChar = function (s) {
+      let idx = s.length;
+      for (let ch of 'abcdefghigklmnopqrstuvwxyz') {
+        const left = s.indexOf(ch);
+        if (left !== -1 && left === s.lastIndexOf(ch)) {
+          idx = Math.min(idx, left)
+        }
+      }
+      return idx === s.length ? -1 : idx;
+    };
+
+
+    console.log(firstUniqChar('leetcode'))
+
+
+  </script>
+</body>
+
+</html>

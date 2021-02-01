@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+
+    let tree = {
+      val: 1,
+      left: {
+        val: 2,
+        left: {
+          val: 3,
+          left: null,
+          right: null
+        },
+        right: {
+          val: 4,
+          left: null,
+          right: null
+        }
+      },
+      right: {
+        val: 5,
+        left: null,
+        right: {
+          val: 6,
+          left: null,
+          right: null
+        }
+      }
+    }
+
+    // 前序遍历
+    const preorderTraversal = (root) => {
+      const list = [];
+      const stack = [];
+
+      // 当根节点不为空的时候，将根节点入栈
+      if (root) stack.push(root)
+      while (stack.length > 0) {
+        const curNode = stack.pop()
+        // 第一步的时候，先访问的是根节点
+        list.push(curNode.val)
+
+        // 我们先打印左子树，然后右子树
+        // 所以先加入栈的是右子树，然后左子树
+        if (curNode.right !== null) {
+          stack.push(curNode.right)
+        }
+        if (curNode.left !== null) {
+          stack.push(curNode.left)
+        }
+      }
+      return list
+    }
+
+    // console.log(preorderTraversal(tree))
+
+
+    var inorderTraversal = function (root) {
+      let list = []
+      let stack = []
+      let node = root
+      while (stack.length || node) {
+        // 遍历左子树
+        while (node) {
+          stack.push(node)
+          node = node.left
+        }
+        node = stack.pop()
+        list.push(node.val)
+        node = node.right
+      }
+      return list
+    };
+    // console.log(inorderTraversal(tree))
+
+
+
+
+
+
+
+
+
+    // 后序遍历
+    const postorderTraversal = (root) => {
+      const list = [];
+      const stack = [];
+
+      // 当根节点不为空的时候，将根节点入栈
+      if (root) stack.push(root)
+      while (stack.length > 0) {
+        const curNode = stack.pop()
+        list.unshift(curNode.val)
+
+        if (curNode.right !== null) {
+          stack.push(curNode.right)
+        }
+        if (curNode.left !== null) {
+          stack.push(curNode.left)
+        }
+      }
+      return list
+    }
+
+
+
+
+    const _postorderTraversal = root => {
+      let res = [], stack = []
+      while (root || stack.length) {
+        if (root.left) {
+          stack.push(root)
+          root = root.left
+        } else if (root.right) {
+          stack.push(root)
+          root = root.right
+        } else {
+          res.push(root.val)
+          root = stack.pop()
+          if (root && root.left) root.left = null
+          else if (root && root.right) root.right = null
+        }
+      }
+      return res
+    }
+
+
+
+    // console.log(_postorderTraversal(tree))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    var bstToGst = function (root) {
+      function rml(root) {
+        if (!root) return null
+
+        let stack = []
+        let pre = 0
+        let node = root
+        while (stack.length || node) {
+          while (node) {
+            stack.push(node)
+            node = node.right
+
+          }
+
+
+          node = stack.pop()
+          let tmp = node.val
+          node.val += pre
+          pre = node.val
+          node = node.left
+        }
+      }
+
+      rml(root)
+
+      return root
+    };
+
+    let bstToGstTree = {
+      val: 4,
+      left: {
+        val: 1,
+        left: {
+          val: 0,
+          left: null,
+          right: null
+        },
+        right: {
+          val: 2,
+          left: null,
+          right: {
+            val: 3,
+            left: null,
+            right: null
+          }
+        }
+      },
+      right: {
+        val: 6,
+        left: {
+          val: 5,
+          left: null,
+          right: null
+        },
+        right: {
+          val: 7,
+          left: null,
+          right: {
+            val: 8,
+            left: null,
+            right: null
+          }
+        }
+      }
+    }
+
+
+    // console.log(bstToGst(bstToGstTree))
+    let isBalancedTree = {
+      val: 1,
+      left: {
+        val: 2,
+        left: {
+          val: 3,
+          left: {
+            val: 4,
+            left: null,
+            right: null
+          },
+          right: {
+            val: 4,
+            left: null,
+            right: null
+          }
+        },
+        right: {
+          val: 3,
+          left: null,
+          right: null
+        }
+      },
+      right: {
+        val: 2,
+        left: null,
+        right: null
+      }
+    }
+
+    let isBalancedTree1 = {
+      val: 1,
+      left: null,
+      right: {
+        val: 2,
+        left: null,
+        right: {
+          val: 3,
+          left: null,
+          right: null
+        }
+      }
+    }
+    let isBalancedTree2 = {
+      val: 1,
+      left: {
+        val: 2,
+        left: {
+          val: 3,
+          left: {
+            val: 4,
+            left: null,
+            right: null
+          },
+          right: null
+        },
+        right: null,
+      },
+      right: {
+        val: 2,
+        left: null,
+        right: {
+          val: 3,
+          left: null,
+          right: {
+            val: 4,
+            left: null,
+            right: null
+          }
+        }
+      }
+    }
+
+
+    let isBalancedTree3 = {
+      val: 1,
+      left: {
+        val: 2,
+        left: {
+          val: 3,
+          left: {
+            val: 4,
+            left: null,
+            right: null
+          },
+          right: {
+            val: 4,
+            left: null,
+            right: null
+          }
+        },
+        right: {
+          val: 3,
+          left: {
+            val: 4,
+            left: {
+              val: 5,
+              left: null,
+              right: null
+            },
+            right: {
+              val: 5,
+              left: null,
+              right: null
+            }
+          },
+          right: {
+            val: 4,
+            left: null,
+            right: null
+          }
+        },
+      },
+      right: {
+        val: 2,
+        left: {
+          val: 3,
+          left: {
+            val: 4,
+            left: null,
+            right: null
+          },
+          right: {
+            val: 4,
+            left: null,
+            right: null
+          }
+        },
+        right: {
+          val: 3,
+          left: null,
+          right: null
+        }
+      }
+    }
+
+
+
+
+
+    var isBalanced = function (root) {
+      if (!root) return true;
+      function evalDeep(root) {
+        if (!root) return 0
+        let deep = 1
+        let stack = [root]
+        while (stack.length) {
+          let currentSize = stack.length
+          for (let i = 0; i < currentSize; i++) {
+            let node = stack.shift()
+            if (node.left) stack.push(node.left)
+            if (node.right) stack.push(node.right)
+          }
+          if (stack.length) deep++
+        }
+        return deep
+      }
+
+      let l = evalDeep(root.left)
+      let r = evalDeep(root.right)
+
+      return (
+        Math.abs(l - r) <= 1
+        && isBalanced(root.left)
+        && isBalanced(root.right)
+      )
+
+
+    };
+
+
+
+
+
+    function isBalanced100(root) {
+      if (root == null) return true;
+      let l = depth(root.left)
+      let r = depth(root.right)
+      return (
+        Math.abs(depth(root.left) - depth(root.right)) <= 1
+        && isBalanced100(root.left)
+        && isBalanced100(root.right)
+      )
+    }
+
+    function depth(root) {
+      if (root == null) return 0;
+      return Math.max(depth(root.left), depth(root.right)) + 1;
+    }
+
+    // console.log(isBalanced100(isBalancedTree3))
+
+    let insertIntoBSTree = {
+      val: 4,
+      left: {
+        val: 2,
+        left: {
+          val: 1,
+          left: null,
+          right: null
+        },
+        right: {
+          val: 3,
+          left: null,
+          right: null
+        }
+      },
+      right: {
+        val: 7,
+        left: null,
+        right: null
+      }
+    }
+
+    function TreeNode(val, left, right) {
+      this.val = (val === undefined ? 0 : val)
+      this.left = (left === undefined ? null : left)
+      this.right = (right === undefined ? null : right)
+    }
+
+    var insertIntoBST1 = function (root, val) {
+      if (!root) return null
+      let node = root
+      while (node) {
+        if (val > node.val) {
+          if (!node.right) {
+            node.right = new TreeNode(val)
+            return root
+          }
+          node = node.right
+
+
+        } else if (val < node.val) {
+          if (!node.left) {
+            node.left = new TreeNode(val)
+            return root
+          }
+          node = node.left
+
+
+        }
+      }
+      return root
+    };
+
+    function insertIntoBST(root, val) {
+      let node = root;
+      while (node != null) {
+        // insert into the right subtree
+        if (val > node.val) {
+          // insert right now
+          if (node.right == null) {
+            node.right = new TreeNode(val);
+            return root;
+          }
+          else node = node.right;
+        }
+        // insert into the left subtree
+        else {
+          // insert right now
+          if (node.left == null) {
+            node.left = new TreeNode(val);
+            return root;
+          }
+          else node = node.left;
+        }
+      }
+      return new TreeNode(val);
+    }
+
+    // console.log(insertIntoBST1(insertIntoBSTree, 5))
+
+
+    let deleteNodeTree = {
+      val: 5,
+      left: {
+        val: 3,
+        left: {
+          val: 2,
+          left: null,
+          right: null
+        },
+        right: {
+          val: 4,
+          left: null,
+          right: null
+        }
+      },
+      right: {
+        val: 6,
+        left: null,
+        right: {
+          val: 7,
+          left: null,
+          right: null
+        }
+      }
+    }
+
+    let deleteNodeTree1 = {
+      val: 0,
+      left: null,
+      right: null
+    }
+
+
+    var deleteNode = function (root, key) {
+      let node = root
+
+      while (node) {
+        if (key > node.val) {
+          node = node.right
+        } else if (key < node.val) {
+          node = node.left
+        } else {
+          if (!node.left && !node.right) {
+            // 叶子节点
+            node = null
+          } else if (node.left) {
+            // 只有1个左子节点
+            cur = node.left
+            while (cur.right) cur = cur.right
+            node.val = key = cur.val
+            node = node.left
+          } else if (node.right) {
+            // 只有1个右子节点
+            cur = node.right
+            while (cur.left) cur = cur.left
+            node.val = key = cur.val
+            node = node.right
+
+          }
+        }
+      }
+      return root
+    };
+
+    console.log(deleteNode(deleteNodeTree, 3))
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    var l1 = {
+      val: 1,
+      next: {
+        val: 2,
+        next: {
+          val: 4,
+          next: null
+        }
+      }
+    }
+
+    var l2 = {
+      val: 1,
+      next: {
+        val: 3,
+        next: {
+          val: 4,
+          next: null
+        }
+      }
+    }
+
+
+    function ListNode(val, next) {
+      this.val = (val === undefined ? 0 : val)
+      this.next = (next === undefined ? null : next)
+    }
+
+    /**
+     * @param {ListNode} l1
+     * @param {ListNode} l2
+     * @return {ListNode}
+     */
+    var mergeTwoLists = function (l1, l2) {
+      let dummy = new ListNode()
+      let prev = dummy
+      while (l1 && l2) {
+        if (l1.val > l2.val) {
+          prev.next = l2
+          l2 = l2.next
+        } else {
+          prev.next = l1
+          l1 = l1.next
+        }
+        prev = prev.next
+      }
+      // l1与l2其中有1个未被合并完成
+      prev.next = l1 == null ? l2 : l1
+      return dummy.next
+    };
+
+    console.log(mergeTwoLists(l1, l2))
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function findDuplicate(nums) {
+      let left = 1
+      let right = nums.length - 1
+      while (left < right) {
+        let mid = Math.floor((left + right) / 2)
+
+        let n = 0
+        // 遍历整个数组，寻找小于等于mid的数字，记录总数
+        for (let i = 0; i < nums.length; i++) {
+          if (nums[i] <= mid) {
+            n += 1
+          }
+        }
+
+        // 小于等于mid的数字总数如果大于mid，肯定有重复的数字
+        if (n > mid) {
+          // 将区间缩小到[1,mid]
+          right = mid
+        } else {
+          left = mid + 1
+        }
+      }
+      return left
+
+    }
+
+    console.log(findDuplicate([1, 3, 4, 2, 2, 5]))
+  </script>
+</body>
+
+</html>

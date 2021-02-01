@@ -1,0 +1,118 @@
+<script>
+  function Heap(compare) {
+    this.arr = [0]
+    this.compare = compare || this._compare
+  }
+
+
+
+  Heap.prototype.push = function (val) {
+    this.arr.push(val)
+    this._up(this.arr.length - 1)
+  }
+
+  Heap.prototype._up = function (index) {
+    let { compare, _parent, arr } = this
+    while (index > 1 && compare(arr[index], arr[_parent(index)])) {
+      this._swap(index, _parent(index))
+      index = _parent(index)
+    }
+  }
+
+  Heap.prototype.pop = function () {
+    if (this.size() < 0) return null
+    this._swap(1, this.arr.length - 1)
+    let res = this.arr.pop()
+    this._down(1)
+    return res
+  }
+
+  Heap.prototype._down = function (index) {
+    let size = this.size()
+    let { _left, _right, compare, arr } = this
+    if (size < 0) return
+    while (_left(index) <= size) {
+      // 暂定左子节点更靠近堆顶
+      let child = _left(index)
+      // 比较左子节点与右子节点，谁更靠近堆顶
+      while (_right(index) <= size && compare(arr[_right(index)], arr[child])) {
+        // 如果右子节点更靠堆顶，就将做子节点与当前节点作比较
+        child = _right(index)
+      }
+      // 如果当前节点比子节点更靠近堆顶，不再下沉
+      if (compare(arr[index], arr[child])) return
+      this._swap(index, child)
+      index = child
+    }
+  }
+
+  Heap.prototype.size = function () {
+    return this.arr.length - 1
+  }
+
+  Heap.prototype.peek = function () {
+    return this.arr[1]
+  }
+
+  Heap.prototype._parent = function (index) {
+    return Math.floor(index / 2)
+  }
+
+  Heap.prototype._left = function (index) {
+    return index * 2
+  }
+
+  Heap.prototype._right = function (index) {
+    return index * 2 + 1
+  }
+
+  Heap.prototype._swap = function (i, j) {
+    let arr = this.arr;
+    [arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+
+  Heap.prototype._compare = function (a, b) {
+    // a是否比b更接近堆顶，默认为大顶堆
+    return a > b
+  }
+
+  // let heap = new Heap() //大顶堆
+  // heap.push(3)
+  // heap.push(1)
+  // heap.push(2)
+  // heap.push(9)
+  // // console.log(heap) //3
+  // heap.pop()
+  // console.log(heap) //3
+
+  var topKFrequent = function (nums, k) {
+    let res = []
+    let map = new Map()
+    for (let i = 0; i < nums.length; i++) {
+      let n = nums[i]
+      if (map.has(n)) {
+        map.set(n, map.get(n) + 1)
+      } else {
+        map.set(n, 1)
+      }
+    }
+    console.log(map)
+    let heap = new Heap((a, b) => a.value < b.value)
+    map.forEach((value, key) => {
+
+      if (heap.size() < k) {
+        heap.push({ key, value })
+      } else {
+        if (heap.peek().value < value) {
+          heap.pop()
+          heap.push({ key, value })
+        }
+      }
+    })
+    heap.arr.shift()
+    return heap.arr.map(e => e.key)
+  };
+
+  console.log(topKFrequent([4, 1, -1, 2, -1, 2, 3], 2))
+
+</script>

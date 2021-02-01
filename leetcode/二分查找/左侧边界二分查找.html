@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    // 总结：
+    // target大于数组中所有的元素，left会一直增加，直到越界
+    // target小于数组中所有的元素，right会一直减小，直到越界
+    function left_search(nums, target) {
+      let left = 0
+      let right = nums.length - 1
+      while (left <= right) {
+        let mid = Math.floor(left + (right - left) / 2)
+        if (nums[mid] === target) {
+          right = mid - 1
+        } else if (nums[mid] > target) {
+          right = mid - 1
+        } else if (nums[mid] < target) {
+          left = mid + 1
+        }
+      }
+
+      if (left !== nums.length && nums[left] === target) {
+        return left
+      }
+      return -1
+    }
+
+
+
+
+    console.log(left_search([3, 4, 5, 5, 6, 7, 8], 5))
+
+
+    function bianrySearch(nums, target) {
+      let left = 0
+      let right = nums.length - 1
+      while (left < right) {
+        let mid = Math.floor((left + right) / 2)
+        if (nums[mid] < target) {
+          left = mid + 1
+        } else {
+          right = mid
+        }
+      }
+
+      if (nums[left] == target) {
+        return left
+      }
+
+      return -1
+    }
+
+    console.log(bianrySearch([1, 1, 1, 1, 2], 1))
+
+  </script>
+</body>
+
+</html>

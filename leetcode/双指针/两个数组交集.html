@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    var intersection = function (nums1, nums2) {
+      nums1.sort((a, b) => a - b)
+      nums2.sort((a, b) => a - b)
+      let i = 0, j = 0, res = []
+      while (i < nums1.length && j < nums2.length) {
+        if (nums1[i] === nums2[j]) {
+          res.push(nums1[i])
+          i++
+          j++
+        } else if (nums1[i] < nums2[j]) {
+          i++
+        } else if (nums1[i] > nums2[j]) {
+          j++
+        }
+      }
+      return [...new Set(res)]
+    };
+
+    let arr1 = [1, 2, 2, 1]
+    let arr2 = [2, 2]
+
+    console.log(intersection(arr1, arr2))
+
+  </script>
+</body>
+
+</html>

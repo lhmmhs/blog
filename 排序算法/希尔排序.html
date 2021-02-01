@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+
+    var arr = [3, 1, 3, 5, 1, 3, 4, 2]
+    var arr1 = [3, 1, 3, 5, 1, 3, 4, 2]
+
+    function shellSort(arr) {
+      var len = arr.length,
+        temp,
+        gap = 1;
+      while (gap < len / 3) {          //动态定义间隔序列
+        gap = gap * 3 + 1;
+      }
+      for (gap; gap > 0; gap = Math.floor(gap / 3)) {
+        for (var i = gap; i < len; i++) {
+          temp = arr[i];
+          for (var j = i - gap; j >= 0 && arr[j] > temp; j -= gap) {
+            arr[j + gap] = arr[j];
+          }
+          arr[j + gap] = temp;
+        }
+      }
+      return arr;
+    }
+
+
+    function insertSort(arr) {
+      var len = arr.length - 1
+      for (var i = 1; i <= len; i++) {
+        for (var j = i - 1; j >= 0 && arr[j] > arr[j + 1]; j--) {
+          var temp = arr[j]
+          arr[j] = arr[j + 1]
+          arr[j + 1] = temp
+        }
+      }
+
+      return arr;
+    }
+
+
+
+    console.time('shell')
+    shellSort(arr)
+    console.timeEnd('shell')
+
+
+    console.time('insertSort')
+    // insertSort(arr1)
+    console.timeEnd('insertSort')
+
+  </script>
+</body>
+
+</html>

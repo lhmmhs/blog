@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+
+    var arr = [3, 1, 3, 5, 1, 3, 4, 2]
+    function mergeSort(arr) {  //采用自上而下的递归方法
+      var len = arr.length;
+      if (len < 2) {
+        return arr; // 数组只有一位元素时 说明已经拆分到最下层 直接返回该数组
+      }
+      var middle = Math.floor(len / 2),
+        left = arr.slice(0, middle),
+        right = arr.slice(middle);
+      return merge(mergeSort(left), mergeSort(right));
+    }
+
+    function merge(left, right) {
+      var result = [];
+
+      while (left.length && right.length) {
+        if (left[0] <= right[0]) {
+          result.push(left.shift());
+        } else {
+          result.push(right.shift());
+        }
+      }
+
+      while (left.length)
+        result.push(left.shift());
+
+      while (right.length)
+        result.push(right.shift());
+
+      return result;
+    }
+
+
+
+
+    console.time('1')
+    mergeSort(arr)
+    console.timeEnd('1')
+
+  </script>
+</body>
+
+</html>
